@@ -1,5 +1,5 @@
 [package]
-name = "engine"
+name = "maildog"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,14 +8,16 @@ edition = "2021"
 [dependencies]
 base64 = "0.22.1"
 dotenvy = "0.15.7"
-openid = "0.15.0"
 poem = { version = "3.0.4", features = ["session"] }
 rand = "0.8.5"
 reqwest = "0.12.9"
 serde = "1.0.209"
 serde_json = "1.0.127"
-sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "time", "migrate"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "sqlite", "time", "migrate"] }
 thiserror = "2.0.3"
 tokio = { version = "1.0", features = ["full"] }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
+rusqlite = "=0.32.1"
+url = { version = "2.5.7", features = ["serde"] }
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }

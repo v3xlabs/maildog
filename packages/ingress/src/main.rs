@@ -2,7 +2,6 @@ use std::io::Write as _;
 
 use dotenvy::dotenv;
 use imap::types::Fetch;
-use regex::Regex;
 use uuid::Uuid;
 
 pub struct ENV {

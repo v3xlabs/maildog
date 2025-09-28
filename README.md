@@ -36,4 +36,9 @@ docker compose up -d
 
 ```sh
 nix develop
+# Install the dependencies
+maildogctl install
+maildogctl start
+# Start the web dev server
+maildogctl dev
 ```

@@ -16,6 +16,26 @@ maildogctl() {
 
     # dev
     # cd ./web && npm run dev
+
+    cmd=$1
+    case $cmd in
+        install)
+            cd ./web && pnpm install
+            ;;
+        start)
+            cd ./engine && docker compose up -d
+            ;;
+        stop)
+            cd ./engine && docker compose down
+            ;;
+    esac
+
+    if [ -z "$cmd" ]; then
+        echo "Usage: maildogctl <command>"
+        echo "Commands:"
+        echo "  start - Start the Maildog development environment"
+        echo "  stop - Stop the Maildog development environment"
+    fi
 }
 alias mdctl=maildogctl
 

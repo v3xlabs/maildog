@@ -30,10 +30,10 @@ jobs:
         working-directory: ./web
         run: NODE_ENV=production pnpm run build
 
-      - name: Edgeserver Upload 
-        uses: lvkdotsh/edgeserver-action@v0.1.2-pre.4
-        with:
-          app_id: "289766393082488979"
-          server: https://api.edgeserver.io
-          token: ${{ secrets.SIGNAL_TOKEN }}
-          directory: web/dist
+      # - name: Edgeserver Upload 
+      #   uses: lvkdotsh/edgeserver-action@v0.1.2-pre.4
+      #   with:
+      #     app_id: "289766393082488979"
+      #     server: https://api.edgeserver.io
+      #     token: ${{ secrets.SIGNAL_TOKEN }}
+      #     directory: web/dist

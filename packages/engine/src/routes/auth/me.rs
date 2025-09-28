@@ -4,8 +4,7 @@ use openid::Userinfo;
 use poem::{handler, web::{Data, Json}, Result};
 use serde::Serialize;
 use tracing::info;
-
-use crate::{routes::auth::oauth::middleware::UserData, state::AppState};
+use crate::state::AppState;
 
 #[derive(Debug, Serialize)]
 pub struct MeResponse {

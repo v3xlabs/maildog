@@ -20,6 +20,7 @@
           packages = with pkgs; [
             openssl
             pkg-config
+            bashInteractive
 
             jq
             envsubst
@@ -28,10 +29,18 @@
             xxd
             nodejs
             nodePackages.prettier
+            sccache
+            
+            # D-Bus development libraries
+            dbus
+            dbus.dev
           ];
 
           shellHook = ''
             source scripts/dev.sh
+            # Disable SCCache if enabled
+            unset RUSTC_WRAPPER
+            export DATABASE_URL=sqlite://./database.db
           '';
         };
       });
