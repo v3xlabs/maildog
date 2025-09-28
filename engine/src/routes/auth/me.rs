@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use openid::{Client, Discovered, DiscoveredClient, Options, StandardClaims, Userinfo};
+use openid::Userinfo;
 use poem::{handler, web::{Data, Json}, Result};
 use serde::Serialize;
 use tracing::info;

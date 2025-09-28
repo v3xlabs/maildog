@@ -1,13 +1,10 @@
 use std::sync::Arc;
 
-use openid::{Client, Discovered, DiscoveredClient, StandardClaims, Userinfo};
-use poem::{handler, web::{Data, Json}, Result};
+use openid::Userinfo;
+use poem::{handler, session::Session, web::{cookie::{Cookie, CookieJar}, Data, Json}, Result};
 use serde::{Deserialize, Serialize};
-use tracing::info;
 
 use crate::state::AppState;
-
-type OpenIDClient = Client<Discovered, StandardClaims>;
 
 #[derive(Debug, Deserialize)]
 pub struct AuthTokenRequest {
@@ -25,24 +22,29 @@ pub struct OAuthResponse {
 }
 
 #[handler]
-pub async fn get(Data(app_state): Data<&Arc<AppState>>, Json(request): Json<AuthTokenRequest>) -> Result<Json<OAuthResponse>> {
+pub async fn get(Data(app_state): Data<&Arc<AppState>>, session: &Session, cookies: &CookieJar, Json(request): Json<AuthTokenRequest>) -> Result<Json<OAuthResponse>> {
     let app_state = app_state.clone();
-
-    // let openid_discovery_url = app_state.keycloak_openid_url.clone();
 
     let mut token = app_state.oauth_client.authenticate(&request.code, None, None).await.unwrap();
 
     if let Some(id_token) = token.id_token.as_mut() {
         app_state.oauth_client.decode_token(id_token).unwrap();
         app_state.oauth_client.validate_token(id_token, None, None).unwrap();
-        info!("token: {:?}", id_token);
     } else {
         // TODO: handle error
     }
 
     let userinfo = app_state.oauth_client.request_userinfo(&token).await.unwrap();
 
-    info!("userinfo: {:?}", userinfo);
+    let mut access_cookies = Cookie::new("access_token", token.bearer.access_token.clone());
+
+    access_cookies.set_secure(true);
+    access_cookies.set_path("/");
+
+    cookies.add(access_cookies);
+    cookies.add(Cookie::new("refresh_token", token.bearer.refresh_token.clone()));
+
+    session.set("access_token", token.bearer.access_token.clone());
 
     Ok(
         Json(

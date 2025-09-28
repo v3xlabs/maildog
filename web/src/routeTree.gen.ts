@@ -14,8 +14,10 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as MailIndexImport } from './routes/$mail/index'
+import { Route as LogoutLayoutImport } from './routes/logout/_layout'
 import { Route as LoginLayoutImport } from './routes/login/_layout'
 import { Route as ConfigureLayoutImport } from './routes/configure/_layout'
+import { Route as LogoutLayoutIndexImport } from './routes/logout/_layout.index'
 import { Route as LoginLayoutIndexImport } from './routes/login/_layout.index'
 import { Route as ConfigureLayoutIndexImport } from './routes/configure/_layout.index'
 import { Route as LoginLayoutCallbackImport } from './routes/login/_layout.callback'
@@ -24,6 +26,7 @@ import { Route as ConfigureLayoutInstanceHealthcheckImport } from './routes/conf
 
 // Create Virtual Routes
 
+const LogoutImport = createFileRoute('/logout')()
 const LoginImport = createFileRoute('/login')()
 const ConfigureImport = createFileRoute('/configure')()
 const DebugLazyImport = createFileRoute('/debug')()
@@ -31,6 +34,11 @@ const IndexLazyImport = createFileRoute('/')()
 const LoginLayoutCreateLazyImport = createFileRoute('/login/_layout/create')()
 
 // Create/Update Routes
+
+const LogoutRoute = LogoutImport.update({
+  path: '/logout',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const LoginRoute = LoginImport.update({
   path: '/login',
@@ -57,6 +65,11 @@ const MailIndexRoute = MailIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const LogoutLayoutRoute = LogoutLayoutImport.update({
+  id: '/_layout',
+  getParentRoute: () => LogoutRoute,
+} as any)
+
 const LoginLayoutRoute = LoginLayoutImport.update({
   id: '/_layout',
   getParentRoute: () => LoginRoute,
@@ -65,6 +78,11 @@ const LoginLayoutRoute = LoginLayoutImport.update({
 const ConfigureLayoutRoute = ConfigureLayoutImport.update({
   id: '/_layout',
   getParentRoute: () => ConfigureRoute,
+} as any)
+
+const LogoutLayoutIndexRoute = LogoutLayoutIndexImport.update({
+  path: '/',
+  getParentRoute: () => LogoutLayoutRoute,
 } as any)
 
 const LoginLayoutIndexRoute = LoginLayoutIndexImport.update({
@@ -147,6 +165,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginLayoutImport
       parentRoute: typeof LoginRoute
     }
+    '/logout': {
+      id: '/logout'
+      path: '/logout'
+      fullPath: '/logout'
+      preLoaderRoute: typeof LogoutImport
+      parentRoute: typeof rootRoute
+    }
+    '/logout/_layout': {
+      id: '/logout/_layout'
+      path: '/logout'
+      fullPath: '/logout'
+      preLoaderRoute: typeof LogoutLayoutImport
+      parentRoute: typeof LogoutRoute
+    }
     '/$mail/': {
       id: '/$mail/'
       path: '/$mail'
@@ -181,6 +213,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/login/'
       preLoaderRoute: typeof LoginLayoutIndexImport
       parentRoute: typeof LoginLayoutImport
+    }
+    '/logout/_layout/': {
+      id: '/logout/_layout/'
+      path: '/'
+      fullPath: '/logout/'
+      preLoaderRoute: typeof LogoutLayoutIndexImport
+      parentRoute: typeof LogoutLayoutImport
     }
     '/configure/_layout/instance/healthcheck': {
       id: '/configure/_layout/instance/healthcheck'
@@ -218,6 +257,11 @@ export const routeTree = rootRoute.addChildren({
       LoginLayoutIndexRoute,
     }),
   }),
+  LogoutRoute: LogoutRoute.addChildren({
+    LogoutLayoutRoute: LogoutLayoutRoute.addChildren({
+      LogoutLayoutIndexRoute,
+    }),
+  }),
   MailIndexRoute,
 })
 
@@ -233,6 +277,7 @@ export const routeTree = rootRoute.addChildren({
         "/debug",
         "/configure",
         "/login",
+        "/logout",
         "/$mail/"
       ]
     },
@@ -272,6 +317,19 @@ export const routeTree = rootRoute.addChildren({
         "/login/_layout/"
       ]
     },
+    "/logout": {
+      "filePath": "logout",
+      "children": [
+        "/logout/_layout"
+      ]
+    },
+    "/logout/_layout": {
+      "filePath": "logout/_layout.tsx",
+      "parent": "/logout",
+      "children": [
+        "/logout/_layout/"
+      ]
+    },
     "/$mail/": {
       "filePath": "$mail/index.tsx"
     },
@@ -290,6 +348,10 @@ export const routeTree = rootRoute.addChildren({
     "/login/_layout/": {
       "filePath": "login/_layout.index.tsx",
       "parent": "/login/_layout"
+    },
+    "/logout/_layout/": {
+      "filePath": "logout/_layout.index.tsx",
+      "parent": "/logout/_layout"
     },
     "/configure/_layout/instance/healthcheck": {
       "filePath": "configure/_layout.instance/healthcheck.tsx",

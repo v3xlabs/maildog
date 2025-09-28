@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useElapsedTime } from 'use-elapsed-time';
 
@@ -43,6 +43,7 @@ export const Route = createFileRoute('/login/_layout/callback')({
                     headers: {
                         Authorization: `Bearer ${auth_token?.access_token}`,
                     },
+                    credentials: 'include',
                 });
 
                 return (await response.json()) as {
@@ -50,6 +51,20 @@ export const Route = createFileRoute('/login/_layout/callback')({
                 };
             },
             enabled: !!auth_token,
+        });
+        const { mutate } = useMutation({
+            mutationFn: async () => {
+                const response = await fetch(instance_url + '/auth/logout', {
+                    headers: {
+                        Authorization: `Bearer ${auth_token?.access_token}`,
+                    },
+                    credentials: 'include',
+                });
+
+                return (await response.json()) as {
+                    status: string;
+                };
+            },
         });
 
         const { elapsedTime } = useElapsedTime({
@@ -110,6 +125,7 @@ export const Route = createFileRoute('/login/_layout/callback')({
                         <pre className="bg-gray-100 p-4 rounded-md overflow-x-scroll">
                             {JSON.stringify(me, undefined, 2)}
                         </pre>
+                        <button onClick={() => mutate()}>Logout</button>
                     </div>
                 )}
             </div>

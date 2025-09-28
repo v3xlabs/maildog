@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use openid::{Bearer, Jws, Token, Userinfo};
-use poem::{web::Data, Body, FromRequest, Request, RequestBody};
+use openid::{Jws, Userinfo};
+use poem::{session::{CookieSession, Session}, web::{cookie::Cookie, Data}, FromRequest, Request, RequestBody};
 use thiserror::Error;
 use tracing::info;
 
@@ -21,13 +21,14 @@ impl<'a> FromRequest<'a> for UserData {
     async fn from_request(req: &'a Request, body: &mut RequestBody) -> Result<Self, poem::Error> {
         let app_state = Data::<&Arc<AppState>>::from_request(req, body).await.unwrap();
 
-        // extract auth key from the request
-        let auth_key = req.headers().get("Authorization").map(|h| h.to_str().unwrap()).unwrap_or("");
+        let cookies = req.cookie();
+   
+        let access_token = cookies.get("access_token").unwrap();
+        let access_token: &str = access_token.value().unwrap();
+        let refresh_token = cookies.get("refresh_token").unwrap();
+        let refresh_token: &str = refresh_token.value().unwrap();
 
-        info!("auth_key: {:?}", auth_key);
-
-        let token = auth_key.split(" ").nth(1).unwrap();
-        let mut token = Jws::new_encoded(token);
+        let mut token = Jws::new_encoded(access_token);
 
         app_state.oauth_client.decode_token(&mut token).unwrap();
         app_state.oauth_client.validate_token(&token, None, None).unwrap();
