@@ -6,6 +6,7 @@ use poem::{
 };
 use state::AppState;
 use tracing::info;
+use tracing_subscriber::{fmt::{self, format::{DefaultFields, FmtSpan}}, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub mod routes;
 pub mod database;
@@ -15,8 +16,23 @@ pub mod error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
+    // tracing_subscriber::fmt::init();
+    let format = fmt::format()
+        .with_level(true)                  // show log level
+        .with_target(false)                // hide target
+        .with_timer(fmt::time::uptime())   // change timestamp style
+        .with_thread_names(true)           // show thread name
+        .compact();                        // compact style (vs pretty)
 
+    tracing_subscriber::registry()
+        // .with(EnvFilter::from_default_env())
+        .with(fmt::layer()
+            .event_format(format)
+            .fmt_fields(DefaultFields::new())
+            .with_ansi(true)
+            .with_span_events(FmtSpan::CLOSE))
+        .init();
+    
     // Load environment variables
     dotenv().ok();
 

@@ -24,7 +24,7 @@ export const Route = createFileRoute('/configure/_layout/instance/')({
         return (
             <div className="space-y-2 flex flex-col">
                 <Input
-                    placeholder="http://localhost:8000"
+                    placeholder="http://localhost:5173"
                     aria-label="Instance URL"
                     defaultValue={suggestedKeycloakUrl}
                     onChange={(event) =>

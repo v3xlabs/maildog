@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
 .link {
     @apply text-neutral-800 hover:text-neutral-600 underline;
@@ -20,4 +18,165 @@
 
 .hr {
     @apply border-t border-neutral-200 my-4;
+}
+
+@import 'tailwindcss';
+
+@layer base {
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border, currentcolor);
+  }
+}
+
+@theme {
+  --font-sans: 'Nunito Sans', sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-navbar: var(--navbar);
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+  --color-card-foreground: var(--card-foreground);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-surface-primary: var(--surface-primary);
+  --color-surface-hover: var(--surface-hover);
+  --color-warning-background: var(--warning-background);
+  --color-warning-border: var(--warning-border);
+  --color-warning-text: var(--warning-text);
+  --color-warning-icon: var(--warning-icon);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-muted: var(--accent-muted);
+
+  --color-success: var(--success);
+  --color-success-muted: var(--success-muted);
+
+  --color-error: var(--error);
+  --color-error-muted: var(--error-muted);
+
+  --color-overlay: var(--overlay);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+  --color-muted-text: var(--muted-text);
+
+  --color-input: var(--input);
+  --color-border: var(--border);
+}
+
+@font-face {
+  font-family: 'Nunito Sans';
+  src: url('/fonts/Nunito_Sans/NunitoSans-VariableFont.ttf') format('truetype');
+}
+
+:root {
+
+  --background: #fafafa;
+  --navbar: #ffffff;
+
+  --card: #ffffff;
+  --card-foreground: #dedfe0;
+  --card-border: #e5e7eb;
+
+  --text-primary: #000000;
+  --text-secondary: #666666;
+
+  --surface-primary: #f5f5f5;
+  --surface-hover: #e5e5e5;
+
+  --warning-background: #fef3c7;
+  --warning-border: #fbbf24;
+  --warning-text: #92400e;
+  --warning-icon: #f59e0b;
+
+  --accent: #2563eb;
+  /* blue-600 */
+  --accent-foreground: #ffffff;
+  --accent-hover: #1d4ed8;
+  /* blue-700 */
+  --accent-active: #1e40af;
+  /* blue-800 */
+
+  --success: #16a34a;
+  /* green-600 */
+  --success-muted: #dcfce7;
+  /* green-100 */
+
+  --error: #dc2626;
+  /* red-600 */
+  --error-muted: #fee2e2;
+  /* red-100 */
+  --accent-muted: #dbeafe;
+  /* blue-100 */
+
+  --overlay: rgba(0, 0, 0, 0.5);
+  --muted: #f9fafb;
+  /* gray-50 */
+  --muted-2: #f3f4f6;
+  /* gray-100 */
+  --muted-text: #6b7280;
+  /* gray-500/600 */
+
+  --input: #e5e7eb;
+  --border: #e5e7eb;
+
+  color: var(--text-primary);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: #111111;
+  --navbar: #1c1c1c;
+
+  --card: #1c1c1c;
+  --card-foreground: #2d2d2d;
+  --card-border: #252525;
+
+  --text-primary: #ffffff;
+  --text-secondary: #999999;
+
+  --surface-primary: #242424;
+  --surface-hover: #2d2d2d;
+
+  --warning-background: #451a03;
+  --warning-border: #f59e0b;
+  --warning-text: #fbbf24;
+  --warning-icon: #f59e0b;
+
+  --accent: #3b82f6;
+  --accent-foreground: #0b1020;
+  --accent-hover: #2563eb;
+  --accent-active: #1d4ed8;
+
+  --success: #22c55e;
+  --success-muted: #052e16;
+
+  --error: #ef4444;
+  --error-muted: #450a0a;
+
+  --overlay: rgba(0, 0, 0, 0.6);
+  --muted: #171717;
+  --muted-2: #1f1f1f;
+  --muted-text: #9ca3af;
+
+  --input: #252525;
+  --border: #373737;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+.card {
+  @apply bg-card border border-card-border rounded-lg;
 }

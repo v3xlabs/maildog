@@ -9,7 +9,7 @@ export const Route = createFileRoute('/configure/_layout')({
             //         'linear-gradient(to right top, #af0917, #bc161b, #c9201f, #d72924, #e43228)',
             // }}
         >
-            <div className="max-w-lg mx-auto space-y-4">
+            <div className="max-w-lg mx-auto space-y-2">
                 <h1 className="text-2xl font-bold text-text-secondary">
                     Configuration
                 </h1>

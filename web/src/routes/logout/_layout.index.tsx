@@ -23,8 +23,9 @@ const component = () => {
 
             return (await response.json()) as { url: string };
         },
-        retry: 1,
-        refetchInterval: 5000,
+        retry: true,
+        // refetchInterval: 5000,
+        retryDelay: 5000,
     });
 
     return (

@@ -6,6 +6,7 @@ import { match } from 'ts-pattern';
 
 import { Button } from '../../components/ui/Button';
 import { useInstanceConfig } from '../../hooks/useInstanceConfig';
+import { ConnectionSettings } from '../../components/connection/ConnectionSettings';
 
 const component = () => {
     const { instance_url } = useInstanceConfig();
@@ -24,19 +25,24 @@ const component = () => {
             return (await response.json()) as { url: string };
         },
         retry: 1,
-        refetchInterval: 5000,
+        refetchInterval: 10000,
     });
 
     return (
         <>
-            <h1 className="h2">Your Inbox Page</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="h2">Maildog</h1>
+                <ConnectionSettings />
+            </div>
             <p>Welcome to the last inbox you'll ever need</p>
+            {isRefetching && <div>Refetching...</div>}
             <div className="flex flex-col gap-2">
                 {match({
                     error,
                     isSuccess,
                     isError,
                     isLoading,
+                    isRefetching,
                 })
                     .with({ isSuccess: true }, () => (
                         <Button asChild>
@@ -53,7 +59,7 @@ const component = () => {
                             )}
                         </div>
                     ))
-                    .with({ isLoading: true, isError: false }, () => (
+                    .with({ isLoading: true, isError: false, isRefetching: false }, () => (
                         <div>Connecting...</div>
                     ))
                     .otherwise(() => (
