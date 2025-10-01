@@ -37,6 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
 
     let app_state = Arc::new(AppState::new().await?);
+
     let host = app_state.server_host.clone();
 
     // allow all cors
