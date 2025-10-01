@@ -1,8 +1,8 @@
 use sqlx::ConnectOptions;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
-use sqlx::migrate::MigrateDatabase;
 
 pub mod user;
+pub mod models;
 
 pub async fn init_db(database_url: &url::Url) -> Result<SqlitePool, sqlx::Error> {
     // Create connection pool

@@ -44,4 +44,8 @@ impl Keyring {
 
         Ok(Self { passphrase })
     }
+
+    pub fn get_passphrase(&self) -> String {
+        self.passphrase.clone()
+    }
 }
