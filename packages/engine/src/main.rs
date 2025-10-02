@@ -2,7 +2,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use dotenvy::dotenv;
-use poem::{get, listener::TcpListener, middleware::Cors, EndpointExt, Route, Server};
+use poem::{get, handler, listener::TcpListener, middleware::Cors, web::Html, EndpointExt, Route, Server};
+use poem_openapi::{OpenApi, OpenApiService};
+use routes::{EmailApi, HealthApi};
 use state::AppState;
 use tracing::{error, info};
 use tracing_subscriber::{
@@ -21,6 +23,15 @@ pub mod ingress;
 pub mod keyring;
 pub mod routes;
 pub mod state;
+
+fn get_api() -> impl OpenApi {
+    (HealthApi, EmailApi)
+}
+
+#[handler]
+fn scalar_docs() -> Html<&'static str> {
+    Html(include_str!("../static/scalar.html"))
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -57,9 +68,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         periodic_email_ingestion(state_clone).await;
     });
 
-    // allow all cors
+    let api_service = OpenApiService::new(get_api(), "Maildog API", env!("CARGO_PKG_VERSION"))
+        .server("http://localhost:3000/api")  // Use localhost instead of 127.0.0.1
+        .description("Maildog - Email ingestion and management service");
+
+    let spec = api_service.spec_endpoint();
+
+    // Build the application
     let app = Route::new()
-        .at("/health", get(routes::health::get))
+        .at("/docs", get(scalar_docs))
+        .nest("/openapi.json", spec)
+        .nest("/api", api_service)
         .with(
             Cors::new()
                 .allow_credentials(true)
@@ -69,6 +88,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("🐾 Woof! Maildog is now running!");
     info!("You can access the server at http://{}", host);
+    info!("📖 API Documentation (Scalar) at http://{}/docs", host);
+    info!("📄 OpenAPI Spec at http://{}/openapi.json", host);
 
     Ok(Server::new(TcpListener::bind(host)).run(app).await?)
 }

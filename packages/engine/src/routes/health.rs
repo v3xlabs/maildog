@@ -1,12 +1,27 @@
-use poem::{handler, web::Json, Result};
-use serde::Serialize;
+use poem::web::Data;
+use poem_openapi::{payload::Json, Object, OpenApi};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
-#[derive(Debug, Serialize)]
-pub struct Health {
+use crate::state::AppState;
+
+#[derive(Debug, Serialize, Deserialize, Object)]
+pub struct HealthApi;
+
+#[derive(Debug, Serialize, Deserialize, Object)]
+pub struct HealthResponse {
     pub status: String,
+    pub version: String,
 }
 
-#[handler]
-pub async fn get() -> Result<Json<Health>> {
-    Ok(Json(Health { status: "healthy".to_string() }))
+#[OpenApi]
+impl HealthApi {
+    /// Get server health status
+    #[oai(path = "/health", method = "get", tag = "super::ApiTags::System")]
+    async fn health(&self, _state: Data<&Arc<AppState>>) -> poem::Result<Json<HealthResponse>> {
+        Ok(Json(HealthResponse {
+            status: "healthy".to_string(),
+            version: env!("CARGO_PKG_VERSION").to_string(),
+        }))
+    }
 }

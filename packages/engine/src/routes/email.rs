@@ -1,0 +1,173 @@
+use poem::web::Data;
+use poem_openapi::{param::Path, param::Query, payload::Json, Object, OpenApi};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+
+use crate::database::models::Email;
+use crate::state::AppState;
+
+#[derive(Debug, Serialize, Deserialize, Object)]
+pub struct EmailApi;
+
+/// API-friendly email representation with RFC3339 datetime strings
+#[derive(Debug, Serialize, Deserialize, Object)]
+pub struct EmailResponse {
+    pub imap_uid: i64,
+    pub message_id: Option<String>,
+    pub subject: Option<String>,
+    pub from_address: Option<String>,
+    pub to_address: Option<String>,
+    pub cc_address: Option<String>,
+    pub bcc_address: Option<String>,
+    pub reply_to: Option<String>,
+    pub date_sent: Option<String>,
+    pub date_maildog_fetched: String,
+    pub body_text: Option<String>,
+    pub body_html: Option<String>,
+    #[oai(skip)]
+    pub raw_message: Option<Vec<u8>>,
+    pub flags: Option<String>,
+    pub size_bytes: Option<i64>,
+    pub has_attachments: Option<bool>,
+    pub folder_name: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    pub imap_config_id: Option<i64>,
+}
+
+impl From<Email> for EmailResponse {
+    fn from(email: Email) -> Self {
+        Self {
+            imap_uid: email.imap_uid,
+            message_id: email.message_id,
+            subject: email.subject,
+            from_address: email.from_address,
+            to_address: email.to_address,
+            cc_address: email.cc_address,
+            bcc_address: email.bcc_address,
+            reply_to: email.reply_to,
+            date_sent: email.date_sent.map(|d| d.to_string()),
+            date_maildog_fetched: email.date_maildog_fetched.to_string(),
+            body_text: email.body_text,
+            body_html: email.body_html,
+            raw_message: email.raw_message,
+            flags: email.flags,
+            size_bytes: email.size_bytes,
+            has_attachments: email.has_attachments,
+            folder_name: email.folder_name,
+            created_at: email.created_at.to_string(),
+            updated_at: email.updated_at.to_string(),
+            imap_config_id: email.imap_config_id,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Object)]
+pub struct EmailsListResponse {
+    pub emails: Vec<EmailResponse>,
+    pub total: i64,
+    pub page: i64,
+    pub page_size: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Object)]
+pub struct EmailDetailResponse {
+    pub email: EmailResponse,
+}
+
+#[OpenApi]
+impl EmailApi {
+    /// List all emails with pagination
+    #[oai(path = "/emails", method = "get", tag = "super::ApiTags::Email")]
+    async fn list_emails(
+        &self,
+        state: Data<&Arc<AppState>>,
+        page: Query<Option<i64>>,
+    ) -> poem::Result<Json<EmailsListResponse>> {
+        let page = page.0.unwrap_or(1).max(1);
+        let page_size = 50;
+        let offset = (page - 1) * page_size;
+
+        let total = sqlx::query_scalar!("SELECT COUNT(*) as count FROM emails")
+            .fetch_one(&state.db_pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to count emails: {:?}", e);
+                poem::Error::from_string(
+                    "Failed to fetch emails count",
+                    poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+                )
+            })?;
+
+        let emails = sqlx::query_as::<_, Email>(
+            r#"
+            SELECT 
+                imap_uid, subject, from_address, to_address, created_at, imap_config_id
+            FROM emails
+            ORDER BY date_maildog_fetched DESC
+            LIMIT ? OFFSET ?
+            "#
+        )
+        .bind(page_size)
+        .bind(offset)
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to fetch emails: {:?}", e);
+            poem::Error::from_string(
+                "Failed to fetch emails",
+                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+            )
+        })?;
+
+        let email_responses: Vec<EmailResponse> = emails.into_iter().map(Into::into).collect();
+
+        Ok(Json(EmailsListResponse {
+            emails: email_responses,
+            total,
+            page,
+            page_size,
+        }))
+    }
+
+    /// Get a specific email by IMAP UID
+    #[oai(
+        path = "/emails/:imap_uid",
+        method = "get",
+        tag = "super::ApiTags::Email"
+    )]
+    async fn get_email(
+        &self,
+        state: Data<&Arc<AppState>>,
+        /// IMAP UID of the email
+        imap_uid: Path<i64>,
+    ) -> poem::Result<Json<EmailDetailResponse>> {
+        let email = sqlx::query_as::<_, Email>(
+            r#"
+            SELECT 
+                imap_uid, message_id, subject, from_address, to_address, cc_address, bcc_address,
+                reply_to, date_sent, date_maildog_fetched, body_text, body_html, raw_message,
+                flags, size_bytes, has_attachments, folder_name, created_at, updated_at, imap_config_id
+            FROM emails
+            WHERE imap_uid = ?
+            "#
+        )
+        .bind(imap_uid.0)
+        .fetch_optional(&state.db_pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to fetch email: {:?}", e);
+            poem::Error::from_string(
+                "Failed to fetch email",
+                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+            )
+        })?
+        .ok_or_else(|| {
+            poem::Error::from_string("Email not found", poem::http::StatusCode::NOT_FOUND)
+        })?;
+
+        Ok(Json(EmailDetailResponse {
+            email: email.into(),
+        }))
+    }
+}
