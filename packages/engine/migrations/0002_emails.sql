@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS emails (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uid INTEGER NOT NULL UNIQUE, -- IMAP UID
+    imap_uid INTEGER NOT NULL PRIMARY KEY, -- IMAP UID
     message_id TEXT, -- RFC822 Message-ID header
     subject TEXT,
     from_address TEXT,
@@ -9,7 +8,7 @@ CREATE TABLE IF NOT EXISTS emails (
     bcc_address TEXT,
     reply_to TEXT,
     date_sent DATETIME, -- Parsed and stored as ISO8601
-    date_received DATETIME DEFAULT CURRENT_TIMESTAMP,
+    date_maildog_fetched DATETIME DEFAULT CURRENT_TIMESTAMP,
     body_text TEXT,
     body_html TEXT,
     raw_message BLOB,
@@ -18,14 +17,17 @@ CREATE TABLE IF NOT EXISTS emails (
     has_attachments BOOLEAN DEFAULT FALSE,
     folder_name TEXT DEFAULT 'INBOX',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    imap_config_id INTEGER,
+    FOREIGN KEY (imap_config_id) REFERENCES imap_config(id) ON DELETE SET NULL,
+    UNIQUE(imap_uid, folder_name, imap_config_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_emails_uid ON emails(uid);
+CREATE INDEX IF NOT EXISTS idx_emails_imap_uid ON emails(imap_uid);
 CREATE INDEX IF NOT EXISTS idx_emails_message_id ON emails(message_id);
 CREATE INDEX IF NOT EXISTS idx_emails_from ON emails(from_address);
 CREATE INDEX IF NOT EXISTS idx_emails_date_sent ON emails(date_sent);
-CREATE INDEX IF NOT EXISTS idx_emails_date_received ON emails(date_received);
+CREATE INDEX IF NOT EXISTS idx_emails_date_maildog_fetched ON emails(date_maildog_fetched);
 
 CREATE TABLE IF NOT EXISTS attachments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +39,7 @@ CREATE TABLE IF NOT EXISTS attachments (
     content_id TEXT,
     data BLOB,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (email_id) REFERENCES emails(id) ON DELETE CASCADE
+    FOREIGN KEY (email_id) REFERENCES emails(imap_uid) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_attachments_email_id ON attachments(email_id);

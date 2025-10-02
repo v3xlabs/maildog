@@ -63,17 +63,17 @@ impl MailIngress {
 
             imap_session.select("INBOX")?;
 
-           let last_uid = Email::get_highest_uid(&self.pool).await?;
+           let last_imap_uid = Email::get_highest_imap_uid(&self.pool).await?;
             
-            if let Some(uid) = last_uid {
-                let search_result = imap_session.uid_search(&format!("UID {}:*", uid + 1))?;
+            if let Some(imap_uid) = last_imap_uid {
+                let search_result = imap_session.uid_search(&format!("UID {}:*", imap_uid + 1))?;
                 
                 if search_result.is_empty() {
-                    info!("No new emails to process (last UID: {})", uid);
+                    info!("No new emails to process (last UID: {})", imap_uid);
                 } else {
-                    info!("Fetching {} new emails starting from UID {}", search_result.len(), uid + 1);
+                    info!("Fetching {} new emails starting from UID {}", search_result.len(), imap_uid + 1);
                     let messages = imap_session
-                        .uid_fetch(&format!("{}:*", uid + 1), "(RFC822 UID ENVELOPE FLAGS INTERNALDATE)")?;
+                        .uid_fetch(&format!("{}:*", imap_uid + 1), "(RFC822 UID ENVELOPE FLAGS INTERNALDATE)")?;
 
                     for message in messages.iter() {
                         match self.process_email_message(message).await {
@@ -141,11 +141,11 @@ impl MailIngress {
     }
 
     async fn process_email_message(&self, fetch: &Fetch<'_>) -> Result<bool> {
-        let uid = fetch.uid.context("No UID found")? as i64;
+        let imap_uid = fetch.uid.context("No UID found")? as i64;
         
-        let existing = Email::find_by_uid(&self.pool, uid).await?;
+        let existing = Email::find_by_imap_uid(&self.pool, imap_uid).await?;
         if existing.is_some() {
-            info!("Email UID {} already exists, skipping", uid);
+            info!("Email UID {} already exists, skipping", imap_uid);
             return Ok(false); // Not new
         }
         
@@ -233,12 +233,12 @@ impl MailIngress {
             let html = msg.body_html(0).map(|s| s.to_string());
             (text, html)
         } else {
-            warn!("Failed to parse MIME message for UID {}, storing as plain text", uid);
+            warn!("Failed to parse MIME message for UID {}, storing as plain text", imap_uid);
             (Some(String::from_utf8_lossy(body).to_string()), None)
         };
         
         let new_email = NewEmail {
-            uid,
+            imap_uid,
             message_id: message_id.clone(),
             subject: subject.clone(),
             from_address: from_address.clone(),
@@ -254,6 +254,7 @@ impl MailIngress {
             size_bytes: Some(body.len() as i64),
             has_attachments: false, // TODO: Detect attachments
             folder_name: "INBOX".to_string(),
+            imap_config_id: None, // TODO: Get from context
         };
         
         let email = Email::insert(&self.pool, new_email).await?;

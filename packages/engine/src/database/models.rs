@@ -4,8 +4,7 @@ use time::OffsetDateTime;
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct Email {
-    pub id: i64,
-    pub uid: i64,
+    pub imap_uid: i64,
     pub message_id: Option<String>,
     pub subject: Option<String>,
     pub from_address: Option<String>,
@@ -16,7 +15,7 @@ pub struct Email {
     #[serde(with = "time::serde::rfc3339::option")]
     pub date_sent: Option<OffsetDateTime>,
     #[serde(with = "time::serde::rfc3339")]
-    pub date_received: OffsetDateTime,
+    pub date_maildog_fetched: OffsetDateTime,
     pub body_text: Option<String>,
     pub body_html: Option<String>,
     pub raw_message: Option<Vec<u8>>,
@@ -28,11 +27,12 @@ pub struct Email {
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
+    pub imap_config_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewEmail {
-    pub uid: i64,
+    pub imap_uid: i64,
     pub message_id: Option<String>,
     pub subject: Option<String>,
     pub from_address: Option<String>,
@@ -48,6 +48,7 @@ pub struct NewEmail {
     pub size_bytes: Option<i64>,
     pub has_attachments: bool,
     pub folder_name: String,
+    pub imap_config_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
@@ -87,12 +88,12 @@ impl Email {
         let result = sqlx::query!(
             r#"
             INSERT INTO emails (
-                uid, message_id, subject, from_address, to_address, cc_address, bcc_address,
+                imap_uid, message_id, subject, from_address, to_address, cc_address, bcc_address,
                 reply_to, date_sent, body_text, body_html, raw_message, flags, size_bytes,
-                has_attachments, folder_name
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                has_attachments, folder_name, imap_config_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#,
-            email.uid,
+            email.imap_uid,
             email.message_id,
             email.subject,
             email.from_address,
@@ -107,21 +108,21 @@ impl Email {
             email.flags,
             email.size_bytes,
             email.has_attachments,
-            email.folder_name
+            email.folder_name,
+            email.imap_config_id
         )
         .execute(pool)
         .await?;
 
-        let id = result.last_insert_rowid();
-        Self::find_by_id(pool, id).await
+        Self::find_by_imap_uid(pool, email.imap_uid).await?
+            .ok_or(sqlx::Error::RowNotFound)
     }
 
-    pub async fn find_by_id(pool: &sqlx::SqlitePool, id: i64) -> Result<Email, sqlx::Error> {
+    pub async fn find_by_imap_uid(pool: &sqlx::SqlitePool, imap_uid: i64) -> Result<Option<Email>, sqlx::Error> {
         sqlx::query_as!(
             Email,
             r#"SELECT 
-                id as "id!",
-                uid as "uid!",
+                imap_uid as "imap_uid!",
                 message_id,
                 subject,
                 from_address,
@@ -130,7 +131,7 @@ impl Email {
                 bcc_address,
                 reply_to,
                 date_sent,
-                date_received as "date_received!",
+                date_maildog_fetched as "date_maildog_fetched!",
                 body_text,
                 body_html,
                 raw_message,
@@ -139,61 +140,30 @@ impl Email {
                 has_attachments,
                 folder_name,
                 created_at as "created_at!",
-                updated_at as "updated_at!"
-            FROM emails WHERE id = ?"#,
-            id
-        )
-        .fetch_one(pool)
-        .await
-    }
-
-    pub async fn find_by_uid(pool: &sqlx::SqlitePool, uid: i64) -> Result<Option<Email>, sqlx::Error> {
-        sqlx::query_as!(
-            Email,
-            r#"SELECT 
-                id as "id!",
-                uid as "uid!",
-                message_id,
-                subject,
-                from_address,
-                to_address,
-                cc_address,
-                bcc_address,
-                reply_to,
-                date_sent,
-                date_received as "date_received!",
-                body_text,
-                body_html,
-                raw_message,
-                flags,
-                size_bytes,
-                has_attachments,
-                folder_name,
-                created_at as "created_at!",
-                updated_at as "updated_at!"
-            FROM emails WHERE uid = ?"#,
-            uid
+                updated_at as "updated_at!",
+                imap_config_id
+            FROM emails WHERE imap_uid = ?"#,
+            imap_uid
         )
         .fetch_optional(pool)
         .await
     }
 
-    pub async fn get_highest_uid(pool: &sqlx::SqlitePool) -> Result<Option<i64>, sqlx::Error> {
+    pub async fn get_highest_imap_uid(pool: &sqlx::SqlitePool) -> Result<Option<i64>, sqlx::Error> {
         let result = sqlx::query!(
-            r#"SELECT MAX(uid) as "max_uid" FROM emails"#
+            r#"SELECT MAX(imap_uid) as "max_imap_uid: i64" FROM emails"#
         )
         .fetch_one(pool)
         .await?;
         
-        Ok(result.max_uid)
+        Ok(result.max_imap_uid)
     }
 
     pub async fn list_recent(pool: &sqlx::SqlitePool, limit: i64) -> Result<Vec<Email>, sqlx::Error> {
         sqlx::query_as!(
             Email,
             r#"SELECT 
-                id as "id!",
-                uid as "uid!",
+                imap_uid as "imap_uid!",
                 message_id,
                 subject,
                 from_address,
@@ -202,7 +172,7 @@ impl Email {
                 bcc_address,
                 reply_to,
                 date_sent,
-                date_received as "date_received!",
+                date_maildog_fetched as "date_maildog_fetched!",
                 body_text,
                 body_html,
                 raw_message,
@@ -211,8 +181,9 @@ impl Email {
                 has_attachments,
                 folder_name,
                 created_at as "created_at!",
-                updated_at as "updated_at!"
-            FROM emails ORDER BY date_received DESC LIMIT ?"#,
+                updated_at as "updated_at!",
+                imap_config_id
+            FROM emails ORDER BY date_maildog_fetched DESC LIMIT ?"#,
             limit
         )
         .fetch_all(pool)
