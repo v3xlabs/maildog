@@ -1,13 +1,26 @@
 use poem::web::Data;
 use poem_openapi::{param::Path, param::Query, payload::Json, Object, OpenApi};
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use std::sync::Arc;
+use time::OffsetDateTime;
 
 use crate::database::models::Email;
 use crate::state::AppState;
 
 #[derive(Debug, Serialize, Deserialize, Object)]
 pub struct EmailApi;
+
+/// Simplified email for list view
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, Object)]
+pub struct EmailListItem {
+    pub imap_uid: i64,
+    pub subject: Option<String>,
+    pub from_address: Option<String>,
+    pub to_address: Option<String>,
+    pub created_at: String,
+    pub imap_config_id: Option<i64>,
+}
 
 /// API-friendly email representation with RFC3339 datetime strings
 #[derive(Debug, Serialize, Deserialize, Object)]
@@ -64,7 +77,7 @@ impl From<Email> for EmailResponse {
 
 #[derive(Debug, Serialize, Deserialize, Object)]
 pub struct EmailsListResponse {
-    pub emails: Vec<EmailResponse>,
+    pub emails: Vec<EmailListItem>,
     pub total: i64,
     pub page: i64,
     pub page_size: i64,
@@ -99,17 +112,20 @@ impl EmailApi {
                 )
             })?;
 
-        let emails = sqlx::query_as::<_, Email>(
+        // Query only the fields needed for the list view
+        let emails = sqlx::query!(
             r#"
             SELECT 
-                imap_uid, subject, from_address, to_address, created_at, imap_config_id
+                imap_uid, subject, from_address, to_address, 
+                created_at as "created_at: OffsetDateTime", 
+                imap_config_id
             FROM emails
             ORDER BY date_maildog_fetched DESC
             LIMIT ? OFFSET ?
-            "#
+            "#,
+            page_size,
+            offset
         )
-        .bind(page_size)
-        .bind(offset)
         .fetch_all(&state.db_pool)
         .await
         .map_err(|e| {
@@ -120,10 +136,20 @@ impl EmailApi {
             )
         })?;
 
-        let email_responses: Vec<EmailResponse> = emails.into_iter().map(Into::into).collect();
+        let email_list: Vec<EmailListItem> = emails
+            .into_iter()
+            .map(|row| EmailListItem {
+                imap_uid: row.imap_uid,
+                subject: row.subject,
+                from_address: row.from_address,
+                to_address: row.to_address,
+                created_at: row.created_at.map(|dt| dt.to_string()).unwrap_or_default(),
+                imap_config_id: row.imap_config_id,
+            })
+            .collect();
 
         Ok(Json(EmailsListResponse {
-            emails: email_responses,
+            emails: email_list,
             total,
             page,
             page_size,

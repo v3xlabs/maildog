@@ -7,6 +7,12 @@ use time::format_description::well_known::Rfc2822;
 use mail_parser::MessageParser;
 
 use crate::database::models::{Email, NewEmail, IngestionLog, ImapConfig};
+fn decode_subject(raw_subject: &[u8]) -> Option<String> {
+    let header = format!("Subject: {}\r\n\r\n", String::from_utf8_lossy(raw_subject));
+    let parser = MessageParser::default();
+    parser.parse(header.as_bytes())
+        .and_then(|msg| msg.subject().map(|s| s.to_string()))
+}
 
 pub struct MailConfig {
     pub mail_host: String,
@@ -156,7 +162,9 @@ impl MailIngress {
         
         let (subject, from_address, to_address, message_id, date_sent) = if let Some(env) = envelope {
             let subject = env.subject.as_ref()
-                .and_then(|s| String::from_utf8(s.to_vec()).ok());
+                .and_then(|s| decode_subject(s))
+                .or_else(|| env.subject.as_ref()
+                    .and_then(|s| String::from_utf8(s.to_vec()).ok()));
             
             let from_address = env.from.as_ref()
                 .and_then(|addrs| addrs.first())
