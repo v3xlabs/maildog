@@ -20,8 +20,6 @@
     @apply border-t border-neutral-200 my-4;
 }
 
-@import 'tailwindcss';
-
 @layer base {
 
   *,

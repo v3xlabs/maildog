@@ -59,8 +59,10 @@ impl From<Email> for EmailResponse {
             cc_address: email.cc_address,
             bcc_address: email.bcc_address,
             reply_to: email.reply_to,
-            date_sent: email.date_sent.map(|d| d.to_string()),
-            date_maildog_fetched: email.date_maildog_fetched.to_string(),
+            date_sent: email.date_sent.map(|d| d.format(&time::format_description::well_known::Rfc3339)
+                .unwrap_or_else(|_| d.to_string())),
+            date_maildog_fetched: email.date_maildog_fetched.format(&time::format_description::well_known::Rfc3339)
+                .unwrap_or_else(|_| email.date_maildog_fetched.to_string()),
             body_text: email.body_text,
             body_html: email.body_html,
             raw_message: email.raw_message,
@@ -68,8 +70,10 @@ impl From<Email> for EmailResponse {
             size_bytes: email.size_bytes,
             has_attachments: email.has_attachments,
             folder_name: email.folder_name,
-            created_at: email.created_at.to_string(),
-            updated_at: email.updated_at.to_string(),
+            created_at: email.created_at.format(&time::format_description::well_known::Rfc3339)
+                .unwrap_or_else(|_| email.created_at.to_string()),
+            updated_at: email.updated_at.format(&time::format_description::well_known::Rfc3339)
+                .unwrap_or_else(|_| email.updated_at.to_string()),
             imap_config_id: email.imap_config_id,
         }
     }
@@ -143,7 +147,10 @@ impl EmailApi {
                 subject: row.subject,
                 from_address: row.from_address,
                 to_address: row.to_address,
-                created_at: row.created_at.map(|dt| dt.to_string()).unwrap_or_default(),
+                created_at: row.created_at
+                    .map(|dt| dt.format(&time::format_description::well_known::Rfc3339)
+                        .unwrap_or_else(|_| dt.to_string()))
+                    .unwrap_or_default(),
                 imap_config_id: row.imap_config_id,
             })
             .collect();
