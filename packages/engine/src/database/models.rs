@@ -313,7 +313,7 @@ impl ImapConfig {
     }
 
     /// Encrypt a password using the provided passphrase
-    fn encrypt_password(password: &str, passphrase: &str) -> Vec<u8> {
+    pub fn encrypt_password(password: &str, passphrase: &str) -> Vec<u8> {
         use aes_gcm::{
             aead::{Aead, KeyInit, OsRng},
             Aes256Gcm, Nonce

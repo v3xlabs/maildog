@@ -4,7 +4,7 @@ use std::time::Duration;
 use dotenvy::dotenv;
 use poem::{get, handler, listener::TcpListener, middleware::Cors, web::Html, EndpointExt, Route, Server};
 use poem_openapi::{OpenApi, OpenApiService};
-use routes::{EmailApi, HealthApi};
+use routes::{EmailApi, HealthApi, ImapConfigApi};
 use state::AppState;
 use tracing::{error, info};
 use tracing_subscriber::{
@@ -25,7 +25,7 @@ pub mod routes;
 pub mod state;
 
 fn get_api() -> impl OpenApi {
-    (HealthApi, EmailApi)
+    (HealthApi, EmailApi, ImapConfigApi)
 }
 
 #[handler]
@@ -82,6 +82,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(
             Cors::new()
                 .allow_credentials(true)
+                .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+                .allow_headers(vec!["Content-Type", "Authorization"])
                 .allow_origin("http://localhost:5173"),
         )
         .data(app_state);
