@@ -1,7 +1,8 @@
 import { useEmails } from '@/api/emails';
+import { Link } from '@tanstack/react-router';
 
-export function EmailList() {
-    const { data, isLoading, error } = useEmails(1);
+export function EmailList({ configId }: { configId: number }) {
+    const { data, isLoading, error } = useEmails(configId);
 
     if (isLoading) {
         return (
@@ -24,7 +25,7 @@ export function EmailList() {
     }
 
     return (
-        <div className="overflow-y-auto max-h-96 space-y-4">
+        <div className="max-h-96 space-y-4">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Emails</h2>
                 <div className="text-sm text-gray-600">
@@ -34,9 +35,11 @@ export function EmailList() {
 
             <div className="space-y-2">
                 {data.emails.map((email) => (
-                    <div
+                    <Link
                         key={email.imap_uid}
-                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                        to="/mail/$config/$imap_uid"
+                        params={{ config: String(configId), imap_uid: String(email.imap_uid) }}
+                        className="block border rounded-lg p-4 hover:bg-gray-50 transition-colors hover:shadow-md"
                     >
                         <div className="flex justify-between items-start">
                             <div className="flex-1">
@@ -60,7 +63,7 @@ export function EmailList() {
                                 )}
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 ))}
             </div>
 

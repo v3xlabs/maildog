@@ -27,6 +27,9 @@ const LoginRouteImport = createFileRoute('/login')()
 const ConfigureRouteImport = createFileRoute('/configure')()
 const DebugLazyRouteImport = createFileRoute('/debug')()
 const IndexLazyRouteImport = createFileRoute('/')()
+const MailConfigImap_uidLazyRouteImport = createFileRoute(
+  '/mail/$config/$imap_uid',
+)()
 const LoginLayoutCreateLazyRouteImport = createFileRoute(
   '/login/_layout/create',
 )()
@@ -88,6 +91,13 @@ const ConfigureLayoutIndexRoute = ConfigureLayoutIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ConfigureLayoutRoute,
 } as any)
+const MailConfigImap_uidLazyRoute = MailConfigImap_uidLazyRouteImport.update({
+  id: '/mail/$config/$imap_uid',
+  path: '/mail/$config/$imap_uid',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import('./routes/mail.$config.$imap_uid.lazy').then((d) => d.Route),
+)
 const LoginLayoutCreateLazyRoute = LoginLayoutCreateLazyRouteImport.update({
   id: '/create',
   path: '/create',
@@ -122,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/$mail': typeof MailIndexRoute
   '/login/callback': typeof LoginLayoutCallbackRoute
   '/login/create': typeof LoginLayoutCreateLazyRoute
+  '/mail/$config/$imap_uid': typeof MailConfigImap_uidLazyRoute
   '/configure/': typeof ConfigureLayoutIndexRoute
   '/login/': typeof LoginLayoutIndexRoute
   '/logout/': typeof LogoutLayoutIndexRoute
@@ -137,6 +148,7 @@ export interface FileRoutesByTo {
   '/$mail': typeof MailIndexRoute
   '/login/callback': typeof LoginLayoutCallbackRoute
   '/login/create': typeof LoginLayoutCreateLazyRoute
+  '/mail/$config/$imap_uid': typeof MailConfigImap_uidLazyRoute
   '/configure/instance/healthcheck': typeof ConfigureLayoutInstanceHealthcheckRoute
   '/configure/instance': typeof ConfigureLayoutInstanceIndexRoute
 }
@@ -153,6 +165,7 @@ export interface FileRoutesById {
   '/$mail/': typeof MailIndexRoute
   '/login/_layout/callback': typeof LoginLayoutCallbackRoute
   '/login/_layout/create': typeof LoginLayoutCreateLazyRoute
+  '/mail/$config/$imap_uid': typeof MailConfigImap_uidLazyRoute
   '/configure/_layout/': typeof ConfigureLayoutIndexRoute
   '/login/_layout/': typeof LoginLayoutIndexRoute
   '/logout/_layout/': typeof LogoutLayoutIndexRoute
@@ -170,6 +183,7 @@ export interface FileRouteTypes {
     | '/$mail'
     | '/login/callback'
     | '/login/create'
+    | '/mail/$config/$imap_uid'
     | '/configure/'
     | '/login/'
     | '/logout/'
@@ -185,6 +199,7 @@ export interface FileRouteTypes {
     | '/$mail'
     | '/login/callback'
     | '/login/create'
+    | '/mail/$config/$imap_uid'
     | '/configure/instance/healthcheck'
     | '/configure/instance'
   id:
@@ -200,6 +215,7 @@ export interface FileRouteTypes {
     | '/$mail/'
     | '/login/_layout/callback'
     | '/login/_layout/create'
+    | '/mail/$config/$imap_uid'
     | '/configure/_layout/'
     | '/login/_layout/'
     | '/logout/_layout/'
@@ -214,6 +230,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRouteWithChildren
   LogoutRoute: typeof LogoutRouteWithChildren
   MailIndexRoute: typeof MailIndexRoute
+  MailConfigImap_uidLazyRoute: typeof MailConfigImap_uidLazyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -301,6 +318,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/configure/'
       preLoaderRoute: typeof ConfigureLayoutIndexRouteImport
       parentRoute: typeof ConfigureLayoutRoute
+    }
+    '/mail/$config/$imap_uid': {
+      id: '/mail/$config/$imap_uid'
+      path: '/mail/$config/$imap_uid'
+      fullPath: '/mail/$config/$imap_uid'
+      preLoaderRoute: typeof MailConfigImap_uidLazyRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/login/_layout/create': {
       id: '/login/_layout/create'
@@ -418,6 +442,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRouteWithChildren,
   LogoutRoute: LogoutRouteWithChildren,
   MailIndexRoute: MailIndexRoute,
+  MailConfigImap_uidLazyRoute: MailConfigImap_uidLazyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

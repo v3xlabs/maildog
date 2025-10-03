@@ -1,27 +1,29 @@
 import { createLazyFileRoute } from '@tanstack/react-router';
-
-import { Button } from '../components/ui/Button';
-import { EmailList } from '@/components/EmailListExample';
+import { useImapConfigs } from '@/api/imapConfig';
+import { OnboardingFlow } from '@/components/OnboardingFlow';
+import { AppView } from '@/components/AppView';
 
 const component = () => {
-    return (
-        <div className="p-2 w-full h-full flex items-center justify-center">
-            <div className="border p-4 rounded-lg space-y-2 w-full max-w-lg">
-                <h1 className="h2">Your Inbox Page</h1>
-                <EmailList />
-                <div>
-                    Being developed by{' '}
-                    <a
-                        href="https://v3x.company"
-                        className="link"
-                        target="_blank"
-                    >
-                        V3X Labs
-                    </a>
+    const { data, isLoading } = useImapConfigs();
+    
+    if (isLoading) {
+        return (
+            <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center space-y-4">
+                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-gray-600">Loading Maildog...</p>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
+
+    const hasConfigs = data?.configs && data.configs.length > 0;
+
+    if (!hasConfigs) {
+        return <OnboardingFlow />;
+    }
+
+    return <AppView />;
 };
 
 export const Route = createLazyFileRoute('/')({

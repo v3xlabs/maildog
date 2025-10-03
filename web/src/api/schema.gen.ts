@@ -114,10 +114,183 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/imap-configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all IMAP configurations */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ImapConfigListResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a new IMAP configuration */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["CreateImapConfigRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ImapConfigDetailResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/imap-configs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update an existing IMAP configuration */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UpdateImapConfigRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ImapConfigDetailResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Delete an IMAP configuration */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["SuccessResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/imap-configs/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set an IMAP configuration as active */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ImapConfigDetailResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * CreateImapConfigRequest
+         * @description Request to create a new IMAP configuration
+         */
+        CreateImapConfigRequest: {
+            name: string;
+            mail_host: string;
+            /** Format: uint16 */
+            mail_port: number;
+            username: string;
+            password: string;
+            /** @default true */
+            use_tls: boolean;
+            /** @default false */
+            is_active: boolean;
+        };
         /** EmailDetailResponse */
         EmailDetailResponse: {
             email: components["schemas"]["EmailResponse"];
@@ -178,6 +351,58 @@ export interface components {
         HealthResponse: {
             status: string;
             version: string;
+        };
+        /**
+         * ImapConfigDetailResponse
+         * @description Response containing a single IMAP config
+         */
+        ImapConfigDetailResponse: {
+            config: components["schemas"]["ImapConfigResponse"];
+        };
+        /**
+         * ImapConfigListResponse
+         * @description Response containing a list of IMAP configs
+         */
+        ImapConfigListResponse: {
+            configs: components["schemas"]["ImapConfigResponse"][];
+        };
+        /**
+         * ImapConfigResponse
+         * @description API-friendly IMAP config representation (without encrypted password)
+         */
+        ImapConfigResponse: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            mail_host: string;
+            /** Format: int64 */
+            mail_port: number;
+            username: string;
+            use_tls: boolean;
+            is_active: boolean;
+            created_at: string;
+            updated_at: string;
+        };
+        /**
+         * SuccessResponse
+         * @description Success message response
+         */
+        SuccessResponse: {
+            message: string;
+        };
+        /**
+         * UpdateImapConfigRequest
+         * @description Request to update an existing IMAP configuration
+         */
+        UpdateImapConfigRequest: {
+            name?: string;
+            mail_host?: string;
+            /** Format: uint16 */
+            mail_port?: number;
+            username?: string;
+            password?: string;
+            use_tls?: boolean;
+            is_active?: boolean;
         };
     };
     responses: never;
