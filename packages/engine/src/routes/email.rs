@@ -99,34 +99,40 @@ impl EmailApi {
     async fn list_emails(
         &self,
         state: Data<&Arc<AppState>>,
+        imap_config_id: Query<i64>,
         page: Query<Option<i64>>,
     ) -> poem::Result<Json<EmailsListResponse>> {
         let page = page.0.unwrap_or(1).max(1);
         let page_size = 50;
         let offset = (page - 1) * page_size;
 
-        let total = sqlx::query_scalar!("SELECT COUNT(*) as count FROM emails")
-            .fetch_one(&state.db_pool)
-            .await
-            .map_err(|e| {
-                tracing::error!("Failed to count emails: {:?}", e);
-                poem::Error::from_string(
-                    "Failed to fetch emails count",
-                    poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-                )
-            })?;
+        let total = sqlx::query_scalar!(
+            "SELECT COUNT(*) as count FROM emails WHERE imap_config_id = ?",
+            imap_config_id.0
+        )
+        .fetch_one(&state.db_pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to count emails: {:?}", e);
+            poem::Error::from_string(
+                "Failed to fetch emails count",
+                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+            )
+        })?;
 
         // Query only the fields needed for the list view
         let emails = sqlx::query!(
             r#"
             SELECT 
                 imap_uid, subject, from_address, to_address, 
-                created_at as "created_at: OffsetDateTime", 
+                date_sent as "date_sent: OffsetDateTime", 
                 imap_config_id
             FROM emails
-            ORDER BY date_maildog_fetched DESC
+            WHERE imap_config_id = ?
+            ORDER BY COALESCE(date_sent, date_maildog_fetched) DESC
             LIMIT ? OFFSET ?
             "#,
+            imap_config_id.0,
             page_size,
             offset
         )
@@ -147,7 +153,7 @@ impl EmailApi {
                 subject: row.subject,
                 from_address: row.from_address,
                 to_address: row.to_address,
-                created_at: row.created_at
+                created_at: row.date_sent
                     .map(|dt| dt.format(&time::format_description::well_known::Rfc3339)
                         .unwrap_or_else(|_| dt.to_string()))
                     .unwrap_or_default(),
@@ -174,18 +180,21 @@ impl EmailApi {
         state: Data<&Arc<AppState>>,
         /// IMAP UID of the email
         imap_uid: Path<i64>,
+        /// IMAP config ID to filter emails
+        imap_config_id: Query<i64>,
     ) -> poem::Result<Json<EmailDetailResponse>> {
         let email = sqlx::query_as::<_, Email>(
             r#"
             SELECT 
-                imap_uid, message_id, subject, from_address, to_address, cc_address, bcc_address,
+                id, imap_uid, message_id, subject, from_address, to_address, cc_address, bcc_address,
                 reply_to, date_sent, date_maildog_fetched, body_text, body_html, raw_message,
                 flags, size_bytes, has_attachments, folder_name, created_at, updated_at, imap_config_id
             FROM emails
-            WHERE imap_uid = ?
+            WHERE imap_uid = ? AND imap_config_id = ?
             "#
         )
         .bind(imap_uid.0)
+        .bind(imap_config_id.0)
         .fetch_optional(&state.db_pool)
         .await
         .map_err(|e| {

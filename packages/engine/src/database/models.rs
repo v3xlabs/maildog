@@ -4,6 +4,7 @@ use time::OffsetDateTime;
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct Email {
+    pub id: i64,
     pub imap_uid: i64,
     pub message_id: Option<String>,
     pub subject: Option<String>,
@@ -76,7 +77,6 @@ pub struct ImapConfig {
     #[serde(skip_serializing)]
     pub password_encrypted: Vec<u8>,
     pub use_tls: bool,
-    pub is_active: bool,
     #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
@@ -114,44 +114,29 @@ impl Email {
         .execute(pool)
         .await?;
 
-        Self::find_by_imap_uid(pool, email.imap_uid).await?
+        Self::find_by_imap_uid(pool, email.imap_uid, email.imap_config_id).await?
             .ok_or(sqlx::Error::RowNotFound)
     }
 
-    pub async fn find_by_imap_uid(pool: &sqlx::SqlitePool, imap_uid: i64) -> Result<Option<Email>, sqlx::Error> {
-        sqlx::query_as!(
-            Email,
+    pub async fn find_by_imap_uid(pool: &sqlx::SqlitePool, imap_uid: i64, imap_config_id: Option<i64>) -> Result<Option<Email>, sqlx::Error> {
+        sqlx::query_as::<_, Email>(
             r#"SELECT 
-                imap_uid as "imap_uid!",
-                message_id,
-                subject,
-                from_address,
-                to_address,
-                cc_address,
-                bcc_address,
-                reply_to,
-                date_sent,
-                date_maildog_fetched as "date_maildog_fetched!",
-                body_text,
-                body_html,
-                raw_message,
-                flags,
-                size_bytes,
-                has_attachments,
-                folder_name,
-                created_at as "created_at!",
-                updated_at as "updated_at!",
-                imap_config_id
-            FROM emails WHERE imap_uid = ?"#,
-            imap_uid
+                id, imap_uid, message_id, subject, from_address, to_address, cc_address,
+                bcc_address, reply_to, date_sent, date_maildog_fetched, body_text, body_html,
+                raw_message, flags, size_bytes, has_attachments, folder_name, created_at,
+                updated_at, imap_config_id
+            FROM emails WHERE imap_uid = ? AND (imap_config_id = ? OR imap_config_id IS NULL)"#
         )
+        .bind(imap_uid)
+        .bind(imap_config_id)
         .fetch_optional(pool)
         .await
     }
 
-    pub async fn get_highest_imap_uid(pool: &sqlx::SqlitePool) -> Result<Option<i64>, sqlx::Error> {
+    pub async fn get_highest_imap_uid(pool: &sqlx::SqlitePool, imap_config_id: i64) -> Result<Option<i64>, sqlx::Error> {
         let result = sqlx::query!(
-            r#"SELECT MAX(imap_uid) as "max_imap_uid: i64" FROM emails"#
+            r#"SELECT MAX(imap_uid) as "max_imap_uid: i64" FROM emails WHERE imap_config_id = ?"#,
+            imap_config_id
         )
         .fetch_one(pool)
         .await?;
@@ -160,32 +145,15 @@ impl Email {
     }
 
     pub async fn list_recent(pool: &sqlx::SqlitePool, limit: i64) -> Result<Vec<Email>, sqlx::Error> {
-        sqlx::query_as!(
-            Email,
+        sqlx::query_as::<_, Email>(
             r#"SELECT 
-                imap_uid as "imap_uid!",
-                message_id,
-                subject,
-                from_address,
-                to_address,
-                cc_address,
-                bcc_address,
-                reply_to,
-                date_sent,
-                date_maildog_fetched as "date_maildog_fetched!",
-                body_text,
-                body_html,
-                raw_message,
-                flags,
-                size_bytes,
-                has_attachments,
-                folder_name,
-                created_at as "created_at!",
-                updated_at as "updated_at!",
-                imap_config_id
-            FROM emails ORDER BY date_maildog_fetched DESC LIMIT ?"#,
-            limit
+                id, imap_uid, message_id, subject, from_address, to_address, cc_address,
+                bcc_address, reply_to, date_sent, date_maildog_fetched, body_text, body_html,
+                raw_message, flags, size_bytes, has_attachments, folder_name, created_at,
+                updated_at, imap_config_id
+            FROM emails ORDER BY date_maildog_fetched DESC LIMIT ?"#
         )
+        .bind(limit)
         .fetch_all(pool)
         .await
     }
@@ -238,7 +206,7 @@ impl IngestionLog {
 }
 
 impl ImapConfig {
-    pub async fn get_active(pool: &sqlx::SqlitePool) -> Result<Option<ImapConfig>, sqlx::Error> {
+    pub async fn get_by_id(pool: &sqlx::SqlitePool, id: i64) -> Result<Option<ImapConfig>, sqlx::Error> {
         sqlx::query_as!(
             ImapConfig,
             r#"SELECT 
@@ -249,10 +217,10 @@ impl ImapConfig {
                 username as "username!",
                 password_encrypted as "password_encrypted!",
                 use_tls as "use_tls!",
-                is_active as "is_active!",
                 created_at as "created_at!",
                 updated_at as "updated_at!"
-            FROM imap_config WHERE is_active = 1 LIMIT 1"#
+            FROM imap_config WHERE id = ?"#,
+            id
         )
         .fetch_optional(pool)
         .await
@@ -269,7 +237,6 @@ impl ImapConfig {
                 username as "username!",
                 password_encrypted as "password_encrypted!",
                 use_tls as "use_tls!",
-                is_active as "is_active!",
                 created_at as "created_at!",
                 updated_at as "updated_at!"
             FROM imap_config ORDER BY name"#
@@ -354,29 +321,21 @@ impl ImapConfig {
         username: String,
         password: String,
         use_tls: bool,
-        is_active: bool,
         passphrase: &str,
     ) -> Result<i64, sqlx::Error> {
         let port = mail_port as i64;
         let password_encrypted = Self::encrypt_password(&password, passphrase);
         
-        if is_active {
-            sqlx::query!("UPDATE imap_config SET is_active = 0")
-                .execute(pool)
-                .await?;
-        }
-        
         let result = sqlx::query!(
             r#"
-            INSERT INTO imap_config (name, mail_host, mail_port, username, password_encrypted, use_tls, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO imap_config (name, mail_host, mail_port, username, password_encrypted, use_tls)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(name) DO UPDATE SET
                 mail_host = excluded.mail_host,
                 mail_port = excluded.mail_port,
                 username = excluded.username,
                 password_encrypted = excluded.password_encrypted,
                 use_tls = excluded.use_tls,
-                is_active = excluded.is_active,
                 updated_at = CURRENT_TIMESTAMP
             "#,
             name,
@@ -384,25 +343,20 @@ impl ImapConfig {
             port,
             username,
             password_encrypted,
-            use_tls,
-            is_active
+            use_tls
         )
         .execute(pool)
         .await?;
 
-        Ok(result.last_insert_rowid())
-    }
+        // Fetch the ID by name since last_insert_rowid() doesn't work reliably with ON CONFLICT
+        let config = sqlx::query!(
+            r#"SELECT id as "id!" FROM imap_config WHERE name = ?"#,
+            name
+        )
+        .fetch_one(pool)
+        .await?;
 
-    pub async fn set_active(pool: &sqlx::SqlitePool, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!("UPDATE imap_config SET is_active = 0")
-            .execute(pool)
-            .await?;
-        
-        sqlx::query!("UPDATE imap_config SET is_active = 1 WHERE id = ?", id)
-            .execute(pool)
-            .await?;
-        
-        Ok(())
+        Ok(config.id)
     }
 
     pub async fn delete(pool: &sqlx::SqlitePool, id: i64) -> Result<(), sqlx::Error> {

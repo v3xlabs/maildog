@@ -21,9 +21,6 @@ pub async fn prompt_imap_config(pool: &SqlitePool, passphrase: &str) -> Result<(
     
     let use_tls_str = prompt_with_default("Use TLS? (y/n)", "y")?;
     let use_tls = use_tls_str.to_lowercase() == "y" || use_tls_str.to_lowercase() == "yes";
-    
-    let is_active_str = prompt_with_default("Set as active configuration? (y/n)", "y")?;
-    let is_active = is_active_str.to_lowercase() == "y" || is_active_str.to_lowercase() == "yes";
 
     info!("Saving IMAP configuration...");
     ImapConfig::save(
@@ -34,7 +31,6 @@ pub async fn prompt_imap_config(pool: &SqlitePool, passphrase: &str) -> Result<(
         username,
         password,
         use_tls,
-        is_active,
         passphrase,
     ).await?;
 
@@ -46,43 +42,18 @@ pub async fn prompt_imap_config(pool: &SqlitePool, passphrase: &str) -> Result<(
 
 /// Check if IMAP config exists, prompt if not
 pub async fn ensure_imap_config(pool: &SqlitePool, passphrase: &str) -> Result<()> {
-    match ImapConfig::get_active(pool).await? {
-        Some(config) => {
-            info!("Using active IMAP configuration: {}", config.name);
-            Ok(())
+    let all_configs = ImapConfig::get_all(pool).await?;
+    
+    if all_configs.is_empty() {
+        println!("\n⚠️  No IMAP configuration found!");
+        println!("Let's create one to get started.\n");
+        prompt_imap_config(pool, passphrase).await
+    } else {
+        info!("Found {} IMAP configuration(s)", all_configs.len());
+        for config in &all_configs {
+            info!("  - {} ({}@{})", config.name, config.username, config.mail_host);
         }
-        None => {
-            let all_configs = ImapConfig::get_all(pool).await?;
-            if all_configs.is_empty() {
-                println!("\n⚠️  No IMAP configuration found!");
-                prompt_imap_config(pool, passphrase).await
-            } else {
-                println!("\n⚠️  No active IMAP configuration!");
-                println!("Available configurations:");
-                for (i, config) in all_configs.iter().enumerate() {
-                    println!("  {}. {} ({}@{})", i + 1, config.name, config.username, config.mail_host);
-                }
-                
-                let choice = prompt("Enter number to activate, or 'new' to create a new config")?;
-                
-                if choice.to_lowercase() == "new" {
-                    prompt_imap_config(pool, passphrase).await
-                } else {
-                    let idx: usize = choice.parse()
-                        .map_err(|_| anyhow::anyhow!("Invalid choice"))?;
-                    
-                    if idx == 0 || idx > all_configs.len() {
-                        return Err(anyhow::anyhow!("Invalid configuration number"));
-                    }
-                    
-                    let config_id = all_configs[idx - 1].id;
-                    ImapConfig::set_active(pool, config_id).await?;
-                    
-                    println!("\n✅ Configuration '{}' is now active!", all_configs[idx - 1].name);
-                    Ok(())
-                }
-            }
-        }
+        Ok(())
     }
 }
 

@@ -82,8 +82,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(
             Cors::new()
                 .allow_credentials(true)
-                .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-                .allow_headers(vec!["Content-Type", "Authorization"])
+                .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
+                .allow_headers(vec!["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"])
                 .allow_origin("http://localhost:5173"),
         )
         .data(app_state);
@@ -102,25 +102,14 @@ async fn periodic_email_ingestion(state: Arc<AppState>) {
     loop {
         interval.tick().await;
 
-        info!("Starting periodic email ingestion...");
+        info!("Starting periodic email ingestion for all mailboxes...");
 
-        match ingress::MailConfig::from_database(&state.db_pool, &state.keyring.get_passphrase())
-            .await
-        {
-            Ok(config) => {
-                let ingress = ingress::MailIngress::new(config, state.db_pool.clone());
-
-                match ingress.process_emails().await {
-                    Ok(()) => {
-                        info!("✅ Periodic email ingestion completed successfully");
-                    }
-                    Err(e) => {
-                        error!("❌ Periodic email ingestion failed: {}", e);
-                    }
-                }
+        match ingress::process_all_mailboxes(&state.db_pool, &state.keyring.get_passphrase()).await {
+            Ok(()) => {
+                info!("✅ Periodic email ingestion completed successfully");
             }
             Err(e) => {
-                error!("❌ Failed to load IMAP configuration: {}", e);
+                error!("❌ Periodic email ingestion failed: {}", e);
             }
         }
     }

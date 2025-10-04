@@ -7,6 +7,7 @@ use time::format_description::well_known::Rfc2822;
 use mail_parser::MessageParser;
 
 use crate::database::models::{Email, NewEmail, IngestionLog, ImapConfig};
+
 fn decode_subject(raw_subject: &[u8]) -> Option<String> {
     let header = format!("Subject: {}\r\n\r\n", String::from_utf8_lossy(raw_subject));
     let parser = MessageParser::default();
@@ -14,46 +15,47 @@ fn decode_subject(raw_subject: &[u8]) -> Option<String> {
         .and_then(|msg| msg.subject().map(|s| s.to_string()))
 }
 
-pub struct MailConfig {
-    pub mail_host: String,
-    pub mail_port: u16,
-    pub username: String,
-    pub password: String,
-}
-
-impl MailConfig {
-    pub async fn from_database(pool: &SqlitePool, passphrase: &str) -> Result<Self> {
-        let config = ImapConfig::get_active(pool)
-            .await
-            .context("Failed to query IMAP config from database")?
-            .context("No active IMAP configuration found in database")?;
-        
-        let password = config.decrypt_password(passphrase)
-            .map_err(|e| anyhow!("Failed to decrypt password: {}", e))?;
-        
-        Ok(MailConfig {
-            mail_host: config.mail_host,
-            mail_port: config.mail_port as u16,
-            username: config.username,
-            password,
-        })
+/// Process emails for all IMAP configurations
+pub async fn process_all_mailboxes(pool: &SqlitePool, passphrase: &str) -> Result<()> {
+    let configs = ImapConfig::get_all(pool)
+        .await
+        .context("Failed to fetch IMAP configurations")?;
+    
+    if configs.is_empty() {
+        warn!("No IMAP configurations found. Please add at least one configuration.");
+        return Ok(());
     }
+    
+    info!("Processing {} IMAP configuration(s)", configs.len());
+    
+    for config in configs {
+        let ingress = MailIngress::new(pool.clone(), config.id, config);
+        if let Err(e) = ingress.process_emails(passphrase).await {
+            error!("Failed to process emails for config ID {}: {}", ingress.imap_config_id, e);
+            // Continue processing other configs even if one fails
+        }
+    }
+    
+    info!("Finished processing all IMAP configurations");
+    Ok(())
 }
 
 pub struct MailIngress {
-    config: MailConfig,
     pool: SqlitePool,
+    imap_config_id: i64,
+    config: ImapConfig,
 }
 
 impl MailIngress {
-    pub fn new(config: MailConfig, pool: SqlitePool) -> Self {
-        Self { config, pool }
+    pub fn new(pool: SqlitePool, imap_config_id: i64, config: ImapConfig) -> Self {
+        Self { pool, imap_config_id, config }
     }
 
-    pub async fn process_emails(&self) -> Result<()> {
+    pub async fn process_emails(&self, passphrase: &str) -> Result<()> {
         let log_id = IngestionLog::create(&self.pool, "INBOX".to_string()).await?;
         
-        info!("Starting email ingestion (log_id: {})", log_id);
+        info!("Starting email ingestion for config '{}' (ID: {}, log_id: {})", 
+              self.config.name, self.imap_config_id, log_id);
         info!("Connecting to mail server: {}:{}", self.config.mail_host, self.config.mail_port);
         
         let mut emails_processed = 0i64;
@@ -61,27 +63,39 @@ impl MailIngress {
         let mut emails_updated = 0i64;
         
         let result = async {
-            let client = imap::ClientBuilder::new(&self.config.mail_host, self.config.mail_port)
+            let password = self.config.decrypt_password(passphrase)
+                .map_err(|e| anyhow!("Failed to decrypt password: {}", e))?;
+            
+            let client = imap::ClientBuilder::new(&self.config.mail_host, self.config.mail_port as u16)
                 .connect()?;
             
-            let mut imap_session = client.login(&self.config.username, &self.config.password)
+            let mut imap_session = client.login(&self.config.username, &password)
                 .map_err(|e| anyhow!("Login failed: {:?}", e))?;
 
             imap_session.select("INBOX")?;
 
-           let last_imap_uid = Email::get_highest_imap_uid(&self.pool).await?;
+            let last_imap_uid = Email::get_highest_imap_uid(&self.pool, self.imap_config_id).await?;
             
             if let Some(imap_uid) = last_imap_uid {
-                let search_result = imap_session.uid_search(&format!("UID {}:*", imap_uid + 1))?;
+                info!("Incremental sync - checking for emails after UID {}", imap_uid);
                 
-                if search_result.is_empty() {
+                // Use UID FETCH with the range to get all emails from last_uid+1 to the end
+                let messages = imap_session
+                    .uid_fetch(&format!("{}:*", imap_uid + 1), "(RFC822 UID ENVELOPE FLAGS INTERNALDATE)")?;
+                
+                let message_count = messages.len();
+                
+                if message_count == 0 {
                     info!("No new emails to process (last UID: {})", imap_uid);
                 } else {
-                    info!("Fetching {} new emails starting from UID {}", search_result.len(), imap_uid + 1);
-                    let messages = imap_session
-                        .uid_fetch(&format!("{}:*", imap_uid + 1), "(RFC822 UID ENVELOPE FLAGS INTERNALDATE)")?;
-
-                    for message in messages.iter() {
+                    info!("Found {} new emails starting from UID {}", message_count, imap_uid + 1);
+                    
+                    for (index, message) in messages.iter().enumerate() {
+                        let current = index + 1;
+                        if message_count > 10 && (current % 10 == 0 || current == message_count) {
+                            info!("Processing new email {}/{}", current, message_count);
+                        }
+                        
                         match self.process_email_message(message).await {
                             Ok(is_new) => {
                                 emails_processed += 1;
@@ -99,11 +113,20 @@ impl MailIngress {
                     }
                 }
             } else {
-                info!("First sync - fetching all emails");
+                info!("First sync - fetching all emails from INBOX");
                 let messages = imap_session
                     .fetch("1:*", "(RFC822 UID ENVELOPE FLAGS INTERNALDATE)")?;
 
-                for message in messages.iter() {
+                let total_messages = messages.len();
+                info!("Found {} total emails to fetch", total_messages);
+
+                for (index, message) in messages.iter().enumerate() {
+                    let current = index + 1;
+                    if current % 10 == 0 || current == total_messages {
+                        info!("Processing email {}/{} ({}%)", 
+                              current, total_messages, (current * 100) / total_messages);
+                    }
+                    
                     match self.process_email_message(message).await {
                         Ok(is_new) => {
                             emails_processed += 1;
@@ -119,11 +142,13 @@ impl MailIngress {
                         }
                     }
                 }
+                
+                info!("First sync completed: processed all {} emails", total_messages);
             }
 
             imap_session.logout().ok();
-            info!("Email processing completed: {} processed, {} new, {} updated", 
-                  emails_processed, emails_new, emails_updated);
+            info!("Email processing completed for '{}': {} processed, {} new, {} updated", 
+                  self.config.name, emails_processed, emails_new, emails_updated);
             
             Ok::<(), anyhow::Error>(())
         }.await;
@@ -149,7 +174,7 @@ impl MailIngress {
     async fn process_email_message(&self, fetch: &Fetch<'_>) -> Result<bool> {
         let imap_uid = fetch.uid.context("No UID found")? as i64;
         
-        let existing = Email::find_by_imap_uid(&self.pool, imap_uid).await?;
+        let existing = Email::find_by_imap_uid(&self.pool, imap_uid, Some(self.imap_config_id)).await?;
         if existing.is_some() {
             info!("Email UID {} already exists, skipping", imap_uid);
             return Ok(false); // Not new
@@ -262,7 +287,7 @@ impl MailIngress {
             size_bytes: Some(body.len() as i64),
             has_attachments: false, // TODO: Detect attachments
             folder_name: "INBOX".to_string(),
-            imap_config_id: None, // TODO: Get from context
+            imap_config_id: Some(self.imap_config_id),
         };
         
         let email = Email::insert(&self.pool, new_email).await?;

@@ -49,7 +49,8 @@ export interface paths {
         /** List all emails with pagination */
         get: {
             parameters: {
-                query?: {
+                query: {
+                    imap_config_id: number;
                     page?: number;
                 };
                 header?: never;
@@ -86,7 +87,10 @@ export interface paths {
         /** Get a specific email by IMAP UID */
         get: {
             parameters: {
-                query?: never;
+                query: {
+                    /** @description IMAP config ID to filter emails */
+                    imap_config_id: number;
+                };
                 header?: never;
                 path: {
                     /** @description IMAP UID of the email */
@@ -234,43 +238,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/imap-configs/{id}/activate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Set an IMAP configuration as active */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: number;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": components["schemas"]["ImapConfigDetailResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -288,8 +255,6 @@ export interface components {
             password: string;
             /** @default true */
             use_tls: boolean;
-            /** @default false */
-            is_active: boolean;
         };
         /** EmailDetailResponse */
         EmailDetailResponse: {
@@ -379,7 +344,6 @@ export interface components {
             mail_port: number;
             username: string;
             use_tls: boolean;
-            is_active: boolean;
             created_at: string;
             updated_at: string;
         };
@@ -402,7 +366,6 @@ export interface components {
             username?: string;
             password?: string;
             use_tls?: boolean;
-            is_active?: boolean;
         };
     };
     responses: never;

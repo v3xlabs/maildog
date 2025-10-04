@@ -18,7 +18,6 @@ pub struct ImapConfigResponse {
     pub mail_port: i64,
     pub username: String,
     pub use_tls: bool,
-    pub is_active: bool,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -32,7 +31,6 @@ impl From<ImapConfig> for ImapConfigResponse {
             mail_port: config.mail_port,
             username: config.username,
             use_tls: config.use_tls,
-            is_active: config.is_active,
             created_at: config.created_at
                 .format(&time::format_description::well_known::Rfc3339)
                 .unwrap_or_else(|_| config.created_at.to_string()),
@@ -53,16 +51,10 @@ pub struct CreateImapConfigRequest {
     pub password: String,
     #[oai(default = "default_use_tls")]
     pub use_tls: bool,
-    #[oai(default = "default_is_active")]
-    pub is_active: bool,
 }
 
 fn default_use_tls() -> bool {
     true
-}
-
-fn default_is_active() -> bool {
-    false
 }
 
 /// Request to update an existing IMAP configuration
@@ -80,8 +72,6 @@ pub struct UpdateImapConfigRequest {
     pub password: Option<String>,
     #[oai(skip_serializing_if_is_none)]
     pub use_tls: Option<bool>,
-    #[oai(skip_serializing_if_is_none)]
-    pub is_active: Option<bool>,
 }
 
 /// Response containing a single IMAP config
@@ -147,7 +137,6 @@ impl ImapConfigApi {
             request.username.clone(),
             request.password.clone(),
             request.use_tls,
-            request.is_active,
             &passphrase,
         )
         .await
@@ -177,7 +166,6 @@ impl ImapConfigApi {
                 username as "username!",
                 password_encrypted as "password_encrypted!",
                 use_tls as "use_tls!",
-                is_active as "is_active!",
                 created_at as "created_at!",
                 updated_at as "updated_at!"
             FROM imap_config WHERE id = ?"#,
@@ -216,7 +204,6 @@ impl ImapConfigApi {
                 username as "username!",
                 password_encrypted as "password_encrypted!",
                 use_tls as "use_tls!",
-                is_active as "is_active!",
                 created_at as "created_at!",
                 updated_at as "updated_at!"
             FROM imap_config WHERE id = ?"#,
@@ -239,7 +226,6 @@ impl ImapConfigApi {
         let mail_port = request.mail_port.map(|p| p as i64).unwrap_or(existing_config.mail_port);
         let username = request.username.clone().unwrap_or(existing_config.username);
         let use_tls = request.use_tls.unwrap_or(existing_config.use_tls);
-        let is_active = request.is_active.unwrap_or(existing_config.is_active);
 
         // Handle password encryption if provided
         let password_encrypted = if let Some(new_password) = &request.password {
@@ -247,17 +233,6 @@ impl ImapConfigApi {
         } else {
             existing_config.password_encrypted
         };
-
-        // If setting this config as active, deactivate all others first
-        if is_active {
-            sqlx::query!("UPDATE imap_config SET is_active = 0")
-                .execute(&state.db_pool)
-                .await
-                .map_err(|e| poem::Error::from_string(
-                    format!("Failed to deactivate other configs: {}", e),
-                    poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-                ))?;
-        }
 
         // Update the config
         sqlx::query!(
@@ -269,7 +244,6 @@ impl ImapConfigApi {
                 username = ?,
                 password_encrypted = ?,
                 use_tls = ?,
-                is_active = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
             "#,
@@ -279,7 +253,6 @@ impl ImapConfigApi {
             username,
             password_encrypted,
             use_tls,
-            is_active,
             id.0
         )
         .execute(&state.db_pool)
@@ -310,7 +283,6 @@ impl ImapConfigApi {
                 username as "username!",
                 password_encrypted as "password_encrypted!",
                 use_tls as "use_tls!",
-                is_active as "is_active!",
                 created_at as "created_at!",
                 updated_at as "updated_at!"
             FROM imap_config WHERE id = ?"#,
@@ -364,67 +336,5 @@ impl ImapConfigApi {
         Ok(Json(SuccessResponse {
             message: format!("IMAP config with ID {} deleted successfully", id.0),
         }))
-    }
-
-    /// Set an IMAP configuration as active
-    #[oai(path = "/imap-configs/:id/activate", method = "post", tag = "super::ApiTags::Email")]
-    async fn activate_imap_config(
-        &self,
-        state: Data<&Arc<AppState>>,
-        id: Path<i64>,
-    ) -> poem::Result<Json<ImapConfigDetailResponse>> {
-        // Check if the config exists
-        let exists = sqlx::query!("SELECT id FROM imap_config WHERE id = ?", id.0)
-            .fetch_optional(&state.db_pool)
-            .await
-            .map_err(|e| poem::Error::from_string(
-                format!("Failed to check IMAP config: {}", e),
-                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-            ))?;
-
-        if exists.is_none() {
-            return Err(poem::Error::from_string(
-                "IMAP config not found",
-                poem::http::StatusCode::NOT_FOUND,
-            ));
-        }
-
-        // Set as active
-        ImapConfig::set_active(&state.db_pool, id.0)
-            .await
-            .map_err(|e| poem::Error::from_string(
-                format!("Failed to activate IMAP config: {}", e),
-                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-            ))?;
-
-        // Fetch the updated config
-        let config = sqlx::query_as!(
-            ImapConfig,
-            r#"SELECT 
-                id as "id!",
-                name as "name!",
-                mail_host as "mail_host!",
-                mail_port as "mail_port!",
-                username as "username!",
-                password_encrypted as "password_encrypted!",
-                use_tls as "use_tls!",
-                is_active as "is_active!",
-                created_at as "created_at!",
-                updated_at as "updated_at!"
-            FROM imap_config WHERE id = ?"#,
-            id.0
-        )
-        .fetch_one(&state.db_pool)
-        .await
-        .map_err(|e| poem::Error::from_string(
-            format!("Failed to fetch activated IMAP config: {}", e),
-            poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ))?;
-
-        let response = ImapConfigDetailResponse {
-            config: ImapConfigResponse::from(config),
-        };
-
-        Ok(Json(response))
     }
 }

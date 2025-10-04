@@ -29,7 +29,6 @@ export const useCreateImapConfig = () => {
             username: string;
             password: string;
             use_tls?: boolean;
-            is_active?: boolean;
         }) => {
             const data: components['schemas']['CreateImapConfigRequest'] = {
                 name: formData.name,
@@ -38,7 +37,6 @@ export const useCreateImapConfig = () => {
                 username: formData.username,
                 password: formData.password,
                 use_tls: formData.use_tls ?? true,
-                is_active: formData.is_active ?? false,
             };
             const response = await useApi('/imap-configs', 'post', {
                 contentType: 'application/json; charset=utf-8',
@@ -72,7 +70,6 @@ export const useUpdateImapConfig = () => {
                 username?: string;
                 password?: string;
                 use_tls?: boolean;
-                is_active?: boolean;
             };
         }) => {
             const response = await useApi('/imap-configs/{id}', 'put', {
@@ -108,26 +105,6 @@ export const useDeleteImapConfig = () => {
         },
         onError: (error) => {
             toast.error(error.message || 'Failed to delete IMAP configuration');
-        },
-    });
-};
-
-export const useActivateImapConfig = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (id: number) => {
-            const response = await useApi('/imap-configs/{id}/activate', 'post', {
-                path: { id },
-            });
-            return response.data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['imap-configs'] });
-            toast.success('IMAP configuration activated');
-        },
-        onError: (error) => {
-            toast.error(error.message || 'Failed to activate IMAP configuration');
         },
     });
 };

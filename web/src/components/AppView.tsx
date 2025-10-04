@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { FiMail, FiPlus, FiEdit2, FiTrash2, FiCheck, FiSettings } from 'react-icons/fi';
+import { FiMail, FiPlus, FiEdit2, FiTrash2, FiSettings } from 'react-icons/fi';
 import {
     useImapConfigs,
     useCreateImapConfig,
     useUpdateImapConfig,
     useDeleteImapConfig,
-    useActivateImapConfig,
     type ImapConfigResponse,
 } from '@/api/imapConfig';
 import { ImapConfigForm } from './ImapConfigForm';
@@ -15,14 +14,20 @@ export const AppView = () => {
     const { data, isLoading } = useImapConfigs();
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingConfig, setEditingConfig] = useState<ImapConfigResponse | null>(null);
+    const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
     
     const createConfig = useCreateImapConfig();
     const updateConfig = useUpdateImapConfig();
     const deleteConfig = useDeleteImapConfig();
-    const activateConfig = useActivateImapConfig();
 
     const configs = data?.configs || [];
-    const activeConfig = configs.find((c) => c.is_active);
+    
+    // Auto-select first config if none selected
+    if (selectedConfigId === null && configs.length > 0 && configs[0]) {
+        setSelectedConfigId(configs[0].id);
+    }
+
+    const selectedConfig = configs.find((c) => c.id === selectedConfigId);
 
     const handleCreate = (formData: any) => {
         createConfig.mutate(formData, {
@@ -43,12 +48,16 @@ export const AppView = () => {
 
     const handleDelete = (id: number) => {
         if (confirm('Are you sure you want to delete this configuration?')) {
-            deleteConfig.mutate(id);
+            deleteConfig.mutate(id, {
+                onSuccess: () => {
+                    // If we deleted the selected config, select another one
+                    if (selectedConfigId === id) {
+                        const remainingConfigs = configs.filter(c => c.id !== id);
+                        setSelectedConfigId(remainingConfigs.length > 0 && remainingConfigs[0] ? remainingConfigs[0].id : null);
+                    }
+                },
+            });
         }
-    };
-
-    const handleActivate = (id: number) => {
-        activateConfig.mutate(id);
     };
 
     if (showAddForm) {
@@ -111,8 +120,9 @@ export const AppView = () => {
                             {configs.map((config) => (
                                 <div
                                     key={config.id}
-                                    className={`p-3 rounded-lg border-2 transition-all ${
-                                        config.is_active
+                                    onClick={() => setSelectedConfigId(config.id)}
+                                    className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                                        selectedConfigId === config.id
                                             ? 'border-blue-500 bg-blue-50'
                                             : 'border-gray-200 bg-white hover:border-gray-300'
                                     }`}
@@ -123,8 +133,8 @@ export const AppView = () => {
                                                 <h3 className="font-semibold text-gray-900 truncate">
                                                     {config.name}
                                                 </h3>
-                                                {config.is_active && (
-                                                    <FiCheck className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                                {selectedConfigId === config.id && (
+                                                    <FiMail className="w-4 h-4 text-blue-600 flex-shrink-0" />
                                                 )}
                                             </div>
                                             <p className="text-xs text-gray-600 truncate">
@@ -137,23 +147,20 @@ export const AppView = () => {
                                     </div>
 
                                     <div className="flex gap-1 mt-2">
-                                        {!config.is_active && (
-                                            <button
-                                                onClick={() => handleActivate(config.id)}
-                                                className="flex-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                                                disabled={activateConfig.isPending}
-                                            >
-                                                Activate
-                                            </button>
-                                        )}
                                         <button
-                                            onClick={() => setEditingConfig(config)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingConfig(config);
+                                            }}
                                             className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
                                         >
                                             <FiEdit2 className="w-3 h-3" />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(config.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(config.id);
+                                            }}
                                             className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
                                             disabled={deleteConfig.isPending}
                                         >
@@ -167,10 +174,10 @@ export const AppView = () => {
                 </div>
 
                 <div className="p-4 border-t border-gray-200 text-xs text-gray-500">
-                    {activeConfig ? (
-                        <p>Active: <span className="font-medium text-gray-700">{activeConfig.name}</span></p>
+                    {selectedConfig ? (
+                        <p>Selected: <span className="font-medium text-gray-700">{selectedConfig.name}</span></p>
                     ) : (
-                        <p>No active configuration</p>
+                        <p>No mailbox selected</p>
                     )}
                 </div>
             </aside>
@@ -180,13 +187,13 @@ export const AppView = () => {
                     <div className="max-w-4xl mx-auto">
                         <div className="mb-6">
                             <h2 className="text-2xl font-bold text-gray-900">Your Inbox</h2>
-                            {activeConfig && (
+                            {selectedConfig && (
                                 <p className="text-gray-600">
-                                    Viewing emails from {activeConfig.name}
+                                    Viewing emails from {selectedConfig.name}
                                 </p>
                             )}
                         </div>
-                        {activeConfig && <EmailList configId={activeConfig.id} />}
+                        {selectedConfig && <EmailList configId={selectedConfig.id} />}
                     </div>
                 </div>
             </main>

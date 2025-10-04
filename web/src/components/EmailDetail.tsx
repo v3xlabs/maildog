@@ -17,7 +17,7 @@ const extractEmail = (email: string | undefined) => {
 };
 
 export const EmailDetail = ({ configId, imapUid }: { configId: string; imapUid: string }) => {
-    const { data, isLoading, error } = useEmail(Number(imapUid));
+    const { data, isLoading, error } = useEmail(Number(configId), Number(imapUid));
     const email = data?.email;
 
     if (isLoading) {
