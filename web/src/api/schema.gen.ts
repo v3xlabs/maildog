@@ -292,6 +292,7 @@ export interface components {
             date_maildog_fetched: string;
             body_text?: string;
             body_html?: string;
+            raw_message?: string;
             flags?: string;
             /** Format: int64 */
             size_bytes?: number;

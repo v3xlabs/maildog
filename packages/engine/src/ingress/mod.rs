@@ -113,37 +113,67 @@ impl MailIngress {
                     }
                 }
             } else {
-                info!("First sync - fetching all emails from INBOX");
-                let messages = imap_session
-                    .fetch("1:*", "(RFC822 UID ENVELOPE FLAGS INTERNALDATE)")?;
-
-                let total_messages = messages.len();
-                info!("Found {} total emails to fetch", total_messages);
-
-                for (index, message) in messages.iter().enumerate() {
-                    let current = index + 1;
-                    if current % 10 == 0 || current == total_messages {
-                        info!("Processing email {}/{} ({}%)", 
-                              current, total_messages, (current * 100) / total_messages);
-                    }
+                info!("First sync - fetching all emails from INBOX in batches");
+                
+                // Get the total number of messages
+                let status = imap_session.examine("INBOX")?;
+                let total_messages = status.exists as i64;
+                
+                if total_messages == 0 {
+                    info!("No emails found in INBOX");
+                } else {
+                    info!("Found {} total emails to fetch", total_messages);
                     
-                    match self.process_email_message(message).await {
-                        Ok(is_new) => {
-                            emails_processed += 1;
-                            if is_new {
-                                emails_new += 1;
-                            } else {
-                                emails_updated += 1;
+                    // Process in batches of 50 to avoid memory issues
+                    const BATCH_SIZE: i64 = 50;
+                    let mut start = 1i64;
+                    
+                    while start <= total_messages {
+                        let end = std::cmp::min(start + BATCH_SIZE - 1, total_messages);
+                        info!("Fetching batch: emails {} to {} ({}/{})", 
+                              start, end, end, total_messages);
+                        
+                        let messages = imap_session
+                            .fetch(&format!("{}:{}", start, end), "(RFC822 UID ENVELOPE FLAGS INTERNALDATE)")?;
+                        
+                        // Collect emails to batch insert
+                        let mut batch_emails = Vec::new();
+                        
+                        for message in messages.iter() {
+                            match self.prepare_email_data(message).await {
+                                Ok(Some(new_email)) => {
+                                    batch_emails.push(new_email);
+                                }
+                                Ok(None) => {
+                                    // Email already exists, skip
+                                    emails_processed += 1;
+                                }
+                                Err(e) => {
+                                    error!("Failed to prepare email UID {}: {}", 
+                                           message.uid.unwrap_or(0), e);
+                                }
                             }
                         }
-                        Err(e) => {
-                            error!("Failed to process email UID {}: {}", 
-                                   message.uid.unwrap_or(0), e);
+                        
+                        // Batch insert all emails from this batch
+                        if !batch_emails.is_empty() {
+                            match Email::insert_batch(&self.pool, batch_emails).await {
+                                Ok(count) => {
+                                    emails_processed += count as i64;
+                                    emails_new += count as i64;
+                                    info!("Inserted {} new emails from batch", count);
+                                }
+                                Err(e) => {
+                                    error!("Failed to batch insert emails: {}", e);
+                                }
+                            }
                         }
+                        
+                        start = end + 1;
                     }
+                    
+                    info!("First sync completed: processed {} emails", emails_processed);
                 }
-                
-                info!("First sync completed: processed all {} emails", total_messages);
             }
 
             imap_session.logout().ok();
@@ -169,6 +199,124 @@ impl MailIngress {
         ).await?;
         
         result
+    }
+
+    async fn prepare_email_data(&self, fetch: &Fetch<'_>) -> Result<Option<NewEmail>> {
+        let imap_uid = fetch.uid.context("No UID found")? as i64;
+        
+        // Check if email already exists
+        let existing = Email::find_by_imap_uid(&self.pool, imap_uid, Some(self.imap_config_id)).await?;
+        if existing.is_some() {
+            return Ok(None); // Email already exists
+        }
+        
+        let envelope = fetch.envelope();
+        let body = fetch.body().context("No body found")?;
+        let flags = fetch.flags();
+        let _internal_date = fetch.internal_date();
+        
+        let (subject, from_address, to_address, message_id, date_sent) = if let Some(env) = envelope {
+            let subject = env.subject.as_ref()
+                .and_then(|s| decode_subject(s))
+                .or_else(|| env.subject.as_ref()
+                    .and_then(|s| String::from_utf8(s.to_vec()).ok()));
+            
+            let from_address = env.from.as_ref()
+                .and_then(|addrs| addrs.first())
+                .and_then(|addr| {
+                    let _name = addr.name.as_ref()
+                        .and_then(|n| String::from_utf8(n.to_vec()).ok());
+                    let mailbox = addr.mailbox.as_ref()
+                        .and_then(|m| String::from_utf8(m.to_vec()).ok());
+                    let host = addr.host.as_ref()
+                        .and_then(|h| String::from_utf8(h.to_vec()).ok());
+                    
+                    match (mailbox, host) {
+                        (Some(m), Some(h)) => Some(format!("{}@{}", m, h)),
+                        _ => None,
+                    }
+                });
+            
+            let to_address = env.to.as_ref()
+                .and_then(|addrs| addrs.first())
+                .and_then(|addr| {
+                    let mailbox = addr.mailbox.as_ref()
+                        .and_then(|m| String::from_utf8(m.to_vec()).ok());
+                    let host = addr.host.as_ref()
+                        .and_then(|h| String::from_utf8(h.to_vec()).ok());
+                    
+                    match (mailbox, host) {
+                        (Some(m), Some(h)) => Some(format!("{}@{}", m, h)),
+                        _ => None,
+                    }
+                });
+            
+            let message_id = env.message_id.as_ref()
+                .and_then(|id| String::from_utf8(id.to_vec()).ok());
+            
+            let date_sent = env.date.as_ref()
+                .and_then(|date| String::from_utf8(date.to_vec()).ok())
+                .and_then(|date_str| {
+                    let cleaned = date_str
+                        .replace(" (UTC)", "")
+                        .replace(" (GMT)", "");
+                    
+                    match OffsetDateTime::parse(&cleaned, &Rfc2822) {
+                        Ok(dt) => Some(dt),
+                        Err(e) => {
+                            warn!("Failed to parse date '{}': {}", date_str, e);
+                            None
+                        }
+                    }
+                });
+            
+            (subject, from_address, to_address, message_id, date_sent)
+        } else {
+            (None, None, None, None, None)
+        };
+        
+        let flags_json = if !flags.is_empty() {
+            let flag_strings: Vec<String> = flags.iter()
+                .map(|f| format!("{:?}", f))
+                .collect();
+            Some(serde_json::to_string(&flag_strings).unwrap_or_default())
+        } else {
+            None
+        };
+        
+        let parser = MessageParser::default();
+        let parsed_message = parser.parse(body);
+        
+        let (body_text, body_html) = if let Some(msg) = parsed_message {
+            let text = msg.body_text(0).map(|s| s.to_string());
+            let html = msg.body_html(0).map(|s| s.to_string());
+            (text, html)
+        } else {
+            warn!("Failed to parse MIME message for UID {}, storing as plain text", imap_uid);
+            (Some(String::from_utf8_lossy(body).to_string()), None)
+        };
+        
+        let new_email = NewEmail {
+            imap_uid,
+            message_id: message_id.clone(),
+            subject: subject.clone(),
+            from_address: from_address.clone(),
+            to_address,
+            cc_address: None,
+            bcc_address: None,
+            reply_to: None,
+            date_sent,
+            body_text,
+            body_html,
+            raw_message: body.to_vec(),
+            flags: flags_json,
+            size_bytes: Some(body.len() as i64),
+            has_attachments: false,
+            folder_name: "INBOX".to_string(),
+            imap_config_id: Some(self.imap_config_id),
+        };
+        
+        Ok(Some(new_email))
     }
 
     async fn process_email_message(&self, fetch: &Fetch<'_>) -> Result<bool> {
@@ -290,7 +438,7 @@ impl MailIngress {
             imap_config_id: Some(self.imap_config_id),
         };
         
-        let email = Email::insert(&self.pool, new_email).await?;
+        let _email = Email::insert(&self.pool, new_email).await?;
         
         Ok(true) // New email
     }

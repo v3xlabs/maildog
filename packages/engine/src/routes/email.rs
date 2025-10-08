@@ -37,8 +37,7 @@ pub struct EmailResponse {
     pub date_maildog_fetched: String,
     pub body_text: Option<String>,
     pub body_html: Option<String>,
-    #[oai(skip)]
-    pub raw_message: Option<Vec<u8>>,
+    pub raw_message: Option<String>,
     pub flags: Option<String>,
     pub size_bytes: Option<i64>,
     pub has_attachments: Option<bool>,
@@ -65,7 +64,7 @@ impl From<Email> for EmailResponse {
                 .unwrap_or_else(|_| email.date_maildog_fetched.to_string()),
             body_text: email.body_text,
             body_html: email.body_html,
-            raw_message: email.raw_message,
+            raw_message: email.raw_message.and_then(|bytes| String::from_utf8(bytes).ok()),
             flags: email.flags,
             size_bytes: email.size_bytes,
             has_attachments: email.has_attachments,

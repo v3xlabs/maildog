@@ -114,20 +114,9 @@ export const EmailDetail = ({ configId, imapUid }: { configId: string; imapUid: 
                     </div>
 
                     <div className="p-8">
-                        <div className="prose prose-slate max-w-none">
-                            {email.body_html ? (
-                                <div 
-                                    dangerouslySetInnerHTML={{ __html: email.body_html }}
-                                    className="email-content"
-                                />
-                            ) : email.body_text ? (
-                                <pre className="whitespace-pre-wrap font-sans text-gray-800 leading-relaxed">
-                                    {email.body_text}
-                                </pre>
-                            ) : (
-                                <div className="text-gray-400 italic">No content</div>
-                            )}
-                        </div>
+                        <pre className="whitespace-pre-wrap break-words font-mono text-sm bg-gray-50 p-4 rounded overflow-auto">
+                            {email.raw_message}
+                        </pre>
                     </div>
                 </div>
             </div>

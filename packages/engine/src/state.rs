@@ -1,4 +1,4 @@
-use tracing::{info, warn};
+use tracing::info;
 use url::Url;
 
 use crate::{database::init_db, error::MailDogError, keyring::Keyring};
@@ -7,10 +7,11 @@ pub struct AppState {
     pub db_pool: sqlx::Pool<sqlx::Sqlite>,
     pub server_host: String,
     pub keyring: Keyring,
+    pub ingestion_trigger: tokio::sync::mpsc::UnboundedSender<()>,
 }
 
 impl AppState {
-    pub async fn new() -> Result<Self, MailDogError> {
+    pub async fn new(ingestion_trigger: tokio::sync::mpsc::UnboundedSender<()>) -> Result<Self, MailDogError> {
         let server_host = std::env::var("SERVER_HOST").unwrap_or("127.0.0.1:3000".to_string());
         let database_url = match std::env::var("DATABASE_URL")
             .map(|url| Url::parse(&url).map_err(|_| MailDogError::DatabaseFileNotFound(url)))
@@ -50,6 +51,7 @@ impl AppState {
             db_pool,
             server_host,
             keyring,
+            ingestion_trigger,
         })
     }
 }

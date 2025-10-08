@@ -35,6 +35,7 @@ fn scalar_docs() -> Html<&'static str> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+
     // tracing_subscriber::fmt::init();
     let format = fmt::format()
         .with_level(true) // show log level
@@ -54,18 +55,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .init();
 
-    // Load environment variables
-    dotenv().ok();
+    if let Err(_) = dotenv() {
+        let _ = dotenvy::from_filename("packages/engine/.env");
+    }
 
-    let app_state = Arc::new(AppState::new().await?);
+    // Create channel for triggering email ingestion on-demand
+    let (ingestion_tx, ingestion_rx) = tokio::sync::mpsc::unbounded_channel::<()>();
 
-    cli::ensure_imap_config(&app_state.db_pool, &app_state.keyring.get_passphrase()).await?;
+    let app_state = Arc::new(AppState::new(ingestion_tx).await?);
+
+
+    match crate::database::models::ImapConfig::get_all(&app_state.db_pool).await {
+        Ok(configs) if configs.is_empty() => {
+            info!("No IMAP configurations found. Please configure via the web interface.");
+        }
+        Ok(configs) => {
+            info!("Found {} IMAP configuration(s)", configs.len());
+            for config in &configs {
+                info!("  - {} ({}@{})", config.name, config.username, config.mail_host);
+            }
+        }
+        Err(e) => {
+            error!("Failed to check IMAP configurations: {}", e);
+        }
+    }
 
     let host = app_state.server_host.clone();
 
     let state_clone = app_state.clone();
     tokio::spawn(async move {
-        periodic_email_ingestion(state_clone).await;
+        periodic_email_ingestion(state_clone, ingestion_rx).await;
     });
 
     let api_service = OpenApiService::new(get_api(), "Maildog API", env!("CARGO_PKG_VERSION"))
@@ -96,20 +115,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(Server::new(TcpListener::bind(host)).run(app).await?)
 }
 
-async fn periodic_email_ingestion(state: Arc<AppState>) {
+async fn periodic_email_ingestion(state: Arc<AppState>, mut ingestion_rx: tokio::sync::mpsc::UnboundedReceiver<()>) {
     let mut interval = tokio::time::interval(Duration::from_secs(300)); // 5 minutes
 
+    // Run initial ingestion immediately on startup
+    info!("Starting initial email ingestion for all mailboxes...");
+    match ingress::process_all_mailboxes(&state.db_pool, &state.keyring.get_passphrase()).await {
+        Ok(()) => {
+            info!("✅ Initial email ingestion completed successfully");
+        }
+        Err(e) => {
+            error!("❌ Initial email ingestion failed: {}", e);
+        }
+    }
+
     loop {
-        interval.tick().await;
+        tokio::select! {
+            _ = interval.tick() => {
+                info!("Starting periodic email ingestion for all mailboxes...");
 
-        info!("Starting periodic email ingestion for all mailboxes...");
-
-        match ingress::process_all_mailboxes(&state.db_pool, &state.keyring.get_passphrase()).await {
-            Ok(()) => {
-                info!("✅ Periodic email ingestion completed successfully");
+                match ingress::process_all_mailboxes(&state.db_pool, &state.keyring.get_passphrase()).await {
+                    Ok(()) => {
+                        info!("✅ Periodic email ingestion completed successfully");
+                    }
+                    Err(e) => {
+                        error!("❌ Periodic email ingestion failed: {}", e);
+                    }
+                }
             }
-            Err(e) => {
-                error!("❌ Periodic email ingestion failed: {}", e);
+            Some(_) = ingestion_rx.recv() => {
+                info!("Triggered email ingestion on-demand...");
+
+                match ingress::process_all_mailboxes(&state.db_pool, &state.keyring.get_passphrase()).await {
+                    Ok(()) => {
+                        info!("✅ On-demand email ingestion completed successfully");
+                    }
+                    Err(e) => {
+                        error!("❌ On-demand email ingestion failed: {}", e);
+                    }
+                }
             }
         }
     }

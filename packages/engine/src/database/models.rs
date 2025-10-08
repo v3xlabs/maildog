@@ -85,7 +85,7 @@ pub struct ImapConfig {
 
 impl Email {
     pub async fn insert(pool: &sqlx::SqlitePool, email: NewEmail) -> Result<Email, sqlx::Error> {
-        let result = sqlx::query!(
+        sqlx::query!(
             r#"
             INSERT INTO emails (
                 imap_uid, message_id, subject, from_address, to_address, cc_address, bcc_address,
@@ -116,6 +116,52 @@ impl Email {
 
         Self::find_by_imap_uid(pool, email.imap_uid, email.imap_config_id).await?
             .ok_or(sqlx::Error::RowNotFound)
+    }
+
+    /// Insert multiple emails in a single transaction for better performance
+    pub async fn insert_batch(pool: &sqlx::SqlitePool, emails: Vec<NewEmail>) -> Result<usize, sqlx::Error> {
+        if emails.is_empty() {
+            return Ok(0);
+        }
+
+        let mut tx = pool.begin().await?;
+        let mut count = 0;
+
+        for email in emails {
+            sqlx::query!(
+                r#"
+                INSERT INTO emails (
+                    imap_uid, message_id, subject, from_address, to_address, cc_address, bcc_address,
+                    reply_to, date_sent, body_text, body_html, raw_message, flags, size_bytes,
+                    has_attachments, folder_name, imap_config_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                "#,
+                email.imap_uid,
+                email.message_id,
+                email.subject,
+                email.from_address,
+                email.to_address,
+                email.cc_address,
+                email.bcc_address,
+                email.reply_to,
+                email.date_sent,
+                email.body_text,
+                email.body_html,
+                email.raw_message,
+                email.flags,
+                email.size_bytes,
+                email.has_attachments,
+                email.folder_name,
+                email.imap_config_id
+            )
+            .execute(&mut *tx)
+            .await?;
+            
+            count += 1;
+        }
+
+        tx.commit().await?;
+        Ok(count)
     }
 
     pub async fn find_by_imap_uid(pool: &sqlx::SqlitePool, imap_uid: i64, imap_config_id: Option<i64>) -> Result<Option<Email>, sqlx::Error> {
@@ -326,7 +372,7 @@ impl ImapConfig {
         let port = mail_port as i64;
         let password_encrypted = Self::encrypt_password(&password, passphrase);
         
-        let result = sqlx::query!(
+        sqlx::query!(
             r#"
             INSERT INTO imap_config (name, mail_host, mail_port, username, password_encrypted, use_tls)
             VALUES (?, ?, ?, ?, ?, ?)

@@ -182,6 +182,13 @@ impl ImapConfigApi {
             config: ImapConfigResponse::from(config),
         };
 
+        // Trigger immediate email ingestion for the new config
+        if let Err(e) = state.ingestion_trigger.send(()) {
+            tracing::warn!("Failed to trigger email ingestion: {}", e);
+        } else {
+            tracing::info!("Triggered immediate email ingestion for new config");
+        }
+
         Ok(Json(response))
     }
 
