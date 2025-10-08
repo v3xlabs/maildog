@@ -31,10 +31,12 @@ impl From<ImapConfig> for ImapConfigResponse {
             mail_port: config.mail_port,
             username: config.username,
             use_tls: config.use_tls,
-            created_at: config.created_at
+            created_at: config
+                .created_at
                 .format(&time::format_description::well_known::Rfc3339)
                 .unwrap_or_else(|_| config.created_at.to_string()),
-            updated_at: config.updated_at
+            updated_at: config
+                .updated_at
                 .format(&time::format_description::well_known::Rfc3339)
                 .unwrap_or_else(|_| config.updated_at.to_string()),
         }
@@ -106,12 +108,12 @@ impl ImapConfigApi {
         &self,
         state: Data<&Arc<AppState>>,
     ) -> poem::Result<Json<ImapConfigListResponse>> {
-        let configs = ImapConfig::get_all(&state.db_pool)
-            .await
-            .map_err(|e| poem::Error::from_string(
+        let configs = ImapConfig::get_all(&state.db_pool).await.map_err(|e| {
+            poem::Error::from_string(
                 format!("Failed to fetch IMAP configs: {}", e),
                 poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-            ))?;
+            )
+        })?;
 
         let response = ImapConfigListResponse {
             configs: configs.into_iter().map(ImapConfigResponse::from).collect(),
@@ -128,7 +130,7 @@ impl ImapConfigApi {
         request: Json<CreateImapConfigRequest>,
     ) -> poem::Result<Json<ImapConfigDetailResponse>> {
         let passphrase = state.keyring.get_passphrase();
-        
+
         let config_id = ImapConfig::save(
             &state.db_pool,
             request.name.clone(),
@@ -173,10 +175,12 @@ impl ImapConfigApi {
         )
         .fetch_one(&state.db_pool)
         .await
-        .map_err(|e| poem::Error::from_string(
-            format!("Failed to fetch created IMAP config: {}", e),
-            poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ))?;
+        .map_err(|e| {
+            poem::Error::from_string(
+                format!("Failed to fetch created IMAP config: {}", e),
+                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+            )
+        })?;
 
         let response = ImapConfigDetailResponse {
             config: ImapConfigResponse::from(config),
@@ -193,7 +197,11 @@ impl ImapConfigApi {
     }
 
     /// Update an existing IMAP configuration
-    #[oai(path = "/imap-configs/:id", method = "put", tag = "super::ApiTags::Email")]
+    #[oai(
+        path = "/imap-configs/:id",
+        method = "put",
+        tag = "super::ApiTags::Email"
+    )]
     async fn update_imap_config(
         &self,
         state: Data<&Arc<AppState>>,
@@ -218,19 +226,26 @@ impl ImapConfigApi {
         )
         .fetch_optional(&state.db_pool)
         .await
-        .map_err(|e| poem::Error::from_string(
-            format!("Failed to fetch IMAP config: {}", e),
-            poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ))?
-        .ok_or_else(|| poem::Error::from_string(
-            "IMAP config not found",
-            poem::http::StatusCode::NOT_FOUND,
-        ))?;
+        .map_err(|e| {
+            poem::Error::from_string(
+                format!("Failed to fetch IMAP config: {}", e),
+                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+            )
+        })?
+        .ok_or_else(|| {
+            poem::Error::from_string("IMAP config not found", poem::http::StatusCode::NOT_FOUND)
+        })?;
 
         // Prepare the updated values
         let name = request.name.clone().unwrap_or(existing_config.name);
-        let mail_host = request.mail_host.clone().unwrap_or(existing_config.mail_host);
-        let mail_port = request.mail_port.map(|p| p as i64).unwrap_or(existing_config.mail_port);
+        let mail_host = request
+            .mail_host
+            .clone()
+            .unwrap_or(existing_config.mail_host);
+        let mail_port = request
+            .mail_port
+            .map(|p| p as i64)
+            .unwrap_or(existing_config.mail_port);
         let username = request.username.clone().unwrap_or(existing_config.username);
         let use_tls = request.use_tls.unwrap_or(existing_config.use_tls);
 
@@ -297,10 +312,12 @@ impl ImapConfigApi {
         )
         .fetch_one(&state.db_pool)
         .await
-        .map_err(|e| poem::Error::from_string(
-            format!("Failed to fetch updated IMAP config: {}", e),
-            poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ))?;
+        .map_err(|e| {
+            poem::Error::from_string(
+                format!("Failed to fetch updated IMAP config: {}", e),
+                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+            )
+        })?;
 
         let response = ImapConfigDetailResponse {
             config: ImapConfigResponse::from(config),
@@ -310,7 +327,11 @@ impl ImapConfigApi {
     }
 
     /// Delete an IMAP configuration
-    #[oai(path = "/imap-configs/:id", method = "delete", tag = "super::ApiTags::Email")]
+    #[oai(
+        path = "/imap-configs/:id",
+        method = "delete",
+        tag = "super::ApiTags::Email"
+    )]
     async fn delete_imap_config(
         &self,
         state: Data<&Arc<AppState>>,
@@ -320,10 +341,12 @@ impl ImapConfigApi {
         let exists = sqlx::query!("SELECT id FROM imap_config WHERE id = ?", id.0)
             .fetch_optional(&state.db_pool)
             .await
-            .map_err(|e| poem::Error::from_string(
-                format!("Failed to check IMAP config: {}", e),
-                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-            ))?;
+            .map_err(|e| {
+                poem::Error::from_string(
+                    format!("Failed to check IMAP config: {}", e),
+                    poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+                )
+            })?;
 
         if exists.is_none() {
             return Err(poem::Error::from_string(
@@ -335,10 +358,12 @@ impl ImapConfigApi {
         // Delete the config
         ImapConfig::delete(&state.db_pool, id.0)
             .await
-            .map_err(|e| poem::Error::from_string(
-                format!("Failed to delete IMAP config: {}", e),
-                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-            ))?;
+            .map_err(|e| {
+                poem::Error::from_string(
+                    format!("Failed to delete IMAP config: {}", e),
+                    poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+                )
+            })?;
 
         Ok(Json(SuccessResponse {
             message: format!("IMAP config with ID {} deleted successfully", id.0),

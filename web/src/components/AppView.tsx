@@ -1,27 +1,32 @@
 import { useState } from 'react';
-import { FiMail, FiPlus, FiEdit2, FiTrash2, FiSettings } from 'react-icons/fi';
+import { FiEdit2, FiMail, FiPlus, FiSettings, FiTrash2 } from 'react-icons/fi';
+
 import {
-    useImapConfigs,
-    useCreateImapConfig,
-    useUpdateImapConfig,
-    useDeleteImapConfig,
     type ImapConfigResponse,
+    useCreateImapConfig,
+    useDeleteImapConfig,
+    useImapConfigs,
+    useUpdateImapConfig,
 } from '@/api/imapConfig';
-import { ImapConfigForm } from './ImapConfigForm';
+
 import { EmailList } from './EmailList';
+import { ImapConfigForm } from './ImapConfigForm';
 
 export const AppView = () => {
     const { data, isLoading } = useImapConfigs();
     const [showAddForm, setShowAddForm] = useState(false);
-    const [editingConfig, setEditingConfig] = useState<ImapConfigResponse | null>(null);
-    const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
-    
+    const [editingConfig, setEditingConfig] =
+        useState<ImapConfigResponse | null>(null);
+    const [selectedConfigId, setSelectedConfigId] = useState<number | null>(
+        null
+    );
+
     const createConfig = useCreateImapConfig();
     const updateConfig = useUpdateImapConfig();
     const deleteConfig = useDeleteImapConfig();
 
     const configs = data?.configs || [];
-    
+
     // Auto-select first config if none selected
     if (selectedConfigId === null && configs.length > 0 && configs[0]) {
         setSelectedConfigId(configs[0].id);
@@ -52,8 +57,15 @@ export const AppView = () => {
                 onSuccess: () => {
                     // If we deleted the selected config, select another one
                     if (selectedConfigId === id) {
-                        const remainingConfigs = configs.filter(c => c.id !== id);
-                        setSelectedConfigId(remainingConfigs.length > 0 && remainingConfigs[0] ? remainingConfigs[0].id : null);
+                        const remainingConfigs = configs.filter(
+                            (c) => c.id !== id
+                        );
+
+                        setSelectedConfigId(
+                            remainingConfigs.length > 0 && remainingConfigs[0]
+                                ? remainingConfigs[0].id
+                                : null
+                        );
                     }
                 },
             });
@@ -64,7 +76,9 @@ export const AppView = () => {
         return (
             <div className="p-6 max-w-2xl mx-auto">
                 <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-2xl font-bold mb-6">Add Email Account</h2>
+                    <h2 className="text-2xl font-bold mb-6">
+                        Add Email Account
+                    </h2>
                     <ImapConfigForm
                         onSubmit={handleCreate}
                         onCancel={() => setShowAddForm(false)}
@@ -79,7 +93,9 @@ export const AppView = () => {
         return (
             <div className="p-6 max-w-2xl mx-auto">
                 <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-2xl font-bold mb-6">Edit Email Account</h2>
+                    <h2 className="text-2xl font-bold mb-6">
+                        Edit Email Account
+                    </h2>
                     <ImapConfigForm
                         config={editingConfig}
                         onSubmit={handleUpdate}
@@ -109,7 +125,9 @@ export const AppView = () => {
 
                 <div className="flex-1 overflow-y-auto p-4">
                     {isLoading ? (
-                        <div className="text-center text-gray-500 py-8">Loading...</div>
+                        <div className="text-center text-gray-500 py-8">
+                            Loading...
+                        </div>
                     ) : configs.length === 0 ? (
                         <div className="text-center text-gray-500 py-8">
                             <FiSettings className="w-12 h-12 mx-auto mb-2 opacity-50" />
@@ -120,7 +138,9 @@ export const AppView = () => {
                             {configs.map((config) => (
                                 <div
                                     key={config.id}
-                                    onClick={() => setSelectedConfigId(config.id)}
+                                    onClick={() =>
+                                        setSelectedConfigId(config.id)
+                                    }
                                     className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${
                                         selectedConfigId === config.id
                                             ? 'border-blue-500 bg-blue-50'
@@ -133,7 +153,8 @@ export const AppView = () => {
                                                 <h3 className="font-semibold text-gray-900 truncate">
                                                     {config.name}
                                                 </h3>
-                                                {selectedConfigId === config.id && (
+                                                {selectedConfigId ===
+                                                    config.id && (
                                                     <FiMail className="w-4 h-4 text-blue-600 flex-shrink-0" />
                                                 )}
                                             </div>
@@ -141,7 +162,8 @@ export const AppView = () => {
                                                 {config.username}
                                             </p>
                                             <p className="text-xs text-gray-500 truncate">
-                                                {config.mail_host}:{config.mail_port}
+                                                {config.mail_host}:
+                                                {config.mail_port}
                                             </p>
                                         </div>
                                     </div>
@@ -175,7 +197,12 @@ export const AppView = () => {
 
                 <div className="p-4 border-t border-gray-200 text-xs text-gray-500">
                     {selectedConfig ? (
-                        <p>Selected: <span className="font-medium text-gray-700">{selectedConfig.name}</span></p>
+                        <p>
+                            Selected:{' '}
+                            <span className="font-medium text-gray-700">
+                                {selectedConfig.name}
+                            </span>
+                        </p>
                     ) : (
                         <p>No mailbox selected</p>
                     )}
@@ -186,14 +213,18 @@ export const AppView = () => {
                 <div className="p-6">
                     <div className="max-w-4xl mx-auto">
                         <div className="mb-6">
-                            <h2 className="text-2xl font-bold text-gray-900">Your Inbox</h2>
+                            <h2 className="text-2xl font-bold text-gray-900">
+                                Your Inbox
+                            </h2>
                             {selectedConfig && (
                                 <p className="text-gray-600">
                                     Viewing emails from {selectedConfig.name}
                                 </p>
                             )}
                         </div>
-                        {selectedConfig && <EmailList configId={selectedConfig.id} />}
+                        {selectedConfig && (
+                            <EmailList configId={selectedConfig.id} />
+                        )}
                     </div>
                 </div>
             </main>

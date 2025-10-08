@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Button } from './ui/Button';
-import { Input } from './ui/Input';
+
 import type { ImapConfigResponse } from '@/api/imapConfig';
 
-interface ImapConfigFormProps {
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+
+interface ImapConfigFormProperties {
     config?: ImapConfigResponse;
     onSubmit: (data: {
         name: string;
@@ -25,7 +27,7 @@ export const ImapConfigForm = ({
     onCancel,
     isLoading,
     submitLabel = 'Save',
-}: ImapConfigFormProps) => {
+}: ImapConfigFormProperties) => {
     const [formData, setFormData] = useState({
         name: config?.name || '',
         mail_host: config?.mail_host || '',
@@ -40,7 +42,7 @@ export const ImapConfigForm = ({
         e.preventDefault();
         onSubmit({
             ...formData,
-            mail_port: parseInt(formData.mail_port, 10),
+            mail_port: Number.parseInt(formData.mail_port, 10),
         });
     };
 
@@ -50,7 +52,9 @@ export const ImapConfigForm = ({
                 aria-label="Configuration Name"
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="My Email Account"
                 required
                 className="w-full border rounded px-3 py-2"
@@ -60,7 +64,9 @@ export const ImapConfigForm = ({
                 aria-label="IMAP Server"
                 type="text"
                 value={formData.mail_host}
-                onChange={(e) => setFormData({ ...formData, mail_host: e.target.value })}
+                onChange={(e) =>
+                    setFormData({ ...formData, mail_host: e.target.value })
+                }
                 placeholder="imap.gmail.com"
                 required
                 className="w-full border rounded px-3 py-2"
@@ -70,7 +76,9 @@ export const ImapConfigForm = ({
                 aria-label="Port"
                 type="number"
                 value={formData.mail_port}
-                onChange={(e) => setFormData({ ...formData, mail_port: e.target.value })}
+                onChange={(e) =>
+                    setFormData({ ...formData, mail_port: e.target.value })
+                }
                 placeholder="993"
                 required
                 className="w-full border rounded px-3 py-2"
@@ -80,17 +88,25 @@ export const ImapConfigForm = ({
                 aria-label="Username/Email"
                 type="text"
                 value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                }
                 placeholder="you@example.com"
                 required
                 className="w-full border rounded px-3 py-2"
             />
 
             <Input
-                aria-label={config ? 'Password (leave empty to keep current)' : 'Password'}
+                aria-label={
+                    config
+                        ? 'Password (leave empty to keep current)'
+                        : 'Password'
+                }
                 type="password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                }
                 placeholder="••••••••"
                 required={!config}
                 className="w-full border rounded px-3 py-2"
@@ -100,7 +116,9 @@ export const ImapConfigForm = ({
                 <input
                     type="checkbox"
                     checked={formData.use_tls}
-                    onChange={(e) => setFormData({ ...formData, use_tls: e.target.checked })}
+                    onChange={(e) =>
+                        setFormData({ ...formData, use_tls: e.target.checked })
+                    }
                     className="w-4 h-4"
                 />
                 <span className="text-sm">Use TLS/SSL</span>
@@ -110,7 +128,12 @@ export const ImapConfigForm = ({
                 <input
                     type="checkbox"
                     checked={formData.is_active}
-                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                    onChange={(e) =>
+                        setFormData({
+                            ...formData,
+                            is_active: e.target.checked,
+                        })
+                    }
                     className="w-4 h-4"
                 />
                 <span className="text-sm">Set as active configuration</span>
@@ -122,7 +145,12 @@ export const ImapConfigForm = ({
                         Cancel
                     </Button>
                 )}
-                <Button type="submit" variant="accent" tone="blue" disabled={isLoading}>
+                <Button
+                    type="submit"
+                    variant="accent"
+                    tone="blue"
+                    disabled={isLoading}
+                >
                     {isLoading ? 'Saving...' : submitLabel}
                 </Button>
             </div>

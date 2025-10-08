@@ -7,7 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "pnpm api-schema && vite",
     "build": "vite build",
-    "api-schema": "openapi-typescript http://localhost:3000/openapi.json --output ./src/api/schema.gen.ts"
+    "api-schema": "openapi-typescript http://localhost:3000/openapi.json --output ./src/api/schema.gen.ts",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
   },
   "keywords": [],
   "author": "",

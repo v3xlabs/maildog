@@ -1,11 +1,12 @@
 import { createLazyFileRoute } from '@tanstack/react-router';
+
 import { useImapConfigs } from '@/api/imapConfig';
-import { OnboardingFlow } from '@/components/OnboardingFlow';
 import { AppView } from '@/components/AppView';
+import { OnboardingFlow } from '@/components/OnboardingFlow';
 
 const component = () => {
     const { data, isLoading } = useImapConfigs();
-    
+
     if (isLoading) {
         return (
             <div className="w-full h-full flex items-center justify-center">

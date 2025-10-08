@@ -1,10 +1,8 @@
 import {
     infiniteQueryOptions,
     queryOptions,
-    useMutation,
-    useQuery,
-    useQueryClient,
     useInfiniteQuery,
+    useQuery,
 } from '@tanstack/react-query';
 
 import { useApi } from './api';
@@ -27,7 +25,8 @@ export const getEmails = (imapConfigId: number, page: number = 1) =>
         },
     });
 
-export const useEmails = (imapConfigId: number, page: number = 1) => useQuery(getEmails(imapConfigId, page));
+export const useEmails = (imapConfigId: number, page: number = 1) =>
+    useQuery(getEmails(imapConfigId, page));
 
 export const getEmail = (imapConfigId: number, imapUid: number) =>
     queryOptions({
@@ -42,7 +41,8 @@ export const getEmail = (imapConfigId: number, imapUid: number) =>
         },
     });
 
-export const useEmail = (imapConfigId: number, imapUid: number) => useQuery(getEmail(imapConfigId, imapUid));
+export const useEmail = (imapConfigId: number, imapUid: number) =>
+    useQuery(getEmail(imapConfigId, imapUid));
 
 export const getEmailsInfinite = (imapConfigId: number) =>
     infiniteQueryOptions({
@@ -55,13 +55,18 @@ export const getEmailsInfinite = (imapConfigId: number) =>
             return response.data;
         },
         initialPageParam: 1,
-        getNextPageParam: (lastPage: EmailsListResponse, _allPages, lastPageParam) => {
+        getNextPageParam: (
+            lastPage: EmailsListResponse,
+            _allPages,
+            lastPageParameter
+        ) => {
             const totalPages = Math.ceil(lastPage.total / lastPage.page_size);
-            
-            return lastPageParam < totalPages ? lastPageParam + 1 : undefined;
+
+            return lastPageParameter < totalPages
+                ? lastPageParameter + 1
+                : undefined;
         },
     });
 
-export const useEmailsInfinite = (imapConfigId: number) => useInfiniteQuery(getEmailsInfinite(imapConfigId));
-
-
+export const useEmailsInfinite = (imapConfigId: number) =>
+    useInfiniteQuery(getEmailsInfinite(imapConfigId));

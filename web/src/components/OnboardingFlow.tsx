@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { FiMail, FiCheckCircle, FiArrowRight } from 'react-icons/fi';
-import { ImapConfigForm } from './ImapConfigForm';
+import { FiArrowRight, FiMail } from 'react-icons/fi';
+
 import { useCreateImapConfig } from '@/api/imapConfig';
+
+import { ImapConfigForm } from './ImapConfigForm';
 
 export const OnboardingFlow = () => {
     const [step, setStep] = useState<'welcome' | 'configure'>('welcome');
@@ -29,9 +31,12 @@ export const OnboardingFlow = () => {
                                 <FiMail className="w-10 h-10 text-white" />
                             </div>
                         </div>
-                        <h1 className="text-3xl font-bold text-gray-900">Welcome to Maildog!</h1>
+                        <h1 className="text-3xl font-bold text-gray-900">
+                            Welcome to Maildog!
+                        </h1>
                         <p className="text-gray-600">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                            Lorem ipsum dolor sit amet, consectetur adipiscing
+                            elit.
                         </p>
                     </div>
 
@@ -51,7 +56,9 @@ export const OnboardingFlow = () => {
         <div className="min-h-screen flex items-center justify-center p-4">
             <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
                 <div className="text-center space-y-2">
-                    <h2 className="text-2xl font-bold text-gray-900">Configure Your Email</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                        Configure Your Email
+                    </h2>
                     <p className="text-gray-600">
                         Enter your IMAP server details below
                     </p>

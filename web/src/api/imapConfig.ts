@@ -1,17 +1,26 @@
-import { useMutation, useQuery, useQueryClient, queryOptions } from '@tanstack/react-query';
+import {
+    queryOptions,
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from '@tanstack/react-query';
 import { toast } from 'sonner';
+
 import { useApi } from './api';
 import { components } from './schema.gen';
 
 export type ImapConfigResponse = components['schemas']['ImapConfigResponse'];
-export type ImapConfigListResponse = components['schemas']['ImapConfigListResponse'];
-export type ImapConfigDetailResponse = components['schemas']['ImapConfigDetailResponse'];
+export type ImapConfigListResponse =
+    components['schemas']['ImapConfigListResponse'];
+export type ImapConfigDetailResponse =
+    components['schemas']['ImapConfigDetailResponse'];
 
 export const getImapConfigs = () =>
     queryOptions({
         queryKey: ['imap-configs'],
         queryFn: async (): Promise<ImapConfigListResponse> => {
             const response = await useApi('/imap-configs', 'get', {});
+
             return response.data;
         },
     });
@@ -42,6 +51,7 @@ export const useCreateImapConfig = () => {
                 contentType: 'application/json; charset=utf-8',
                 data,
             });
+
             return response.data;
         },
         onSuccess: () => {
@@ -77,6 +87,7 @@ export const useUpdateImapConfig = () => {
                 contentType: 'application/json; charset=utf-8',
                 data,
             });
+
             return response.data;
         },
         onSuccess: () => {
@@ -97,6 +108,7 @@ export const useDeleteImapConfig = () => {
             const response = await useApi('/imap-configs/{id}', 'delete', {
                 path: { id },
             });
+
             return response.data;
         },
         onSuccess: () => {

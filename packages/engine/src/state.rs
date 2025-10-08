@@ -11,7 +11,9 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new(ingestion_trigger: tokio::sync::mpsc::UnboundedSender<()>) -> Result<Self, MailDogError> {
+    pub async fn new(
+        ingestion_trigger: tokio::sync::mpsc::UnboundedSender<()>,
+    ) -> Result<Self, MailDogError> {
         let server_host = std::env::var("SERVER_HOST").unwrap_or("127.0.0.1:3000".to_string());
         let database_url = match std::env::var("DATABASE_URL")
             .map(|url| Url::parse(&url).map_err(|_| MailDogError::DatabaseFileNotFound(url)))

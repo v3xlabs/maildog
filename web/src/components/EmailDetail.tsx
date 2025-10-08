@@ -1,23 +1,38 @@
 import { Link } from '@tanstack/react-router';
+
 import { useEmail } from '../api/emails';
 
 const extractName = (emailAddr: string | undefined) => {
     if (!emailAddr) return 'Unknown';
+
     const parts = emailAddr.split('<');
+
     if (parts.length > 1 && parts[0]) {
         return parts[0].trim();
     }
+
     return emailAddr;
 };
 
 const extractEmail = (email: string | undefined) => {
-    if (!email) return undefined;
+    if (!email) return;
+
     const match = email.match(/<(.+)>/);
+
     return match?.[1];
 };
 
-export const EmailDetail = ({ configId, imapUid }: { configId: string; imapUid: string }) => {
-    const { data, isLoading, error } = useEmail(Number(configId), Number(imapUid));
+export const EmailDetail = ({
+    configId,
+    imapUid,
+}: {
+    configId: string;
+    imapUid: string;
+}) => {
+    const { data, isLoading, error } = useEmail(
+        Number(configId),
+        Number(imapUid)
+    );
     const email = data?.email;
 
     if (isLoading) {
@@ -35,9 +50,14 @@ export const EmailDetail = ({ configId, imapUid }: { configId: string; imapUid: 
         return (
             <div className="flex items-center justify-center h-full">
                 <div className="max-w-md p-6 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="text-red-600 font-semibold mb-2">Error loading email</div>
+                    <div className="text-red-600 font-semibold mb-2">
+                        Error loading email
+                    </div>
                     <div className="text-red-700 text-sm">{error.message}</div>
-                    <Link to="/" className="mt-4 inline-block text-blue-600 hover:text-blue-700 text-sm">
+                    <Link
+                        to="/"
+                        className="mt-4 inline-block text-blue-600 hover:text-blue-700 text-sm"
+                    >
                         ← Back to inbox
                     </Link>
                 </div>
@@ -50,7 +70,10 @@ export const EmailDetail = ({ configId, imapUid }: { configId: string; imapUid: 
             <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                     <div className="text-gray-500 mb-4">Email not found</div>
-                    <Link to="/" className="text-blue-600 hover:text-blue-700 text-sm">
+                    <Link
+                        to="/"
+                        className="text-blue-600 hover:text-blue-700 text-sm"
+                    >
                         ← Back to inbox
                     </Link>
                 </div>
@@ -62,7 +85,10 @@ export const EmailDetail = ({ configId, imapUid }: { configId: string; imapUid: 
         <div className="h-full overflow-auto bg-gray-50">
             <div className="max-w-5xl mx-auto p-6">
                 <div className="mb-4">
-                    <Link to="/" className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1">
+                    <Link
+                        to="/"
+                        className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                    >
                         <span>←</span> Back to inbox
                     </Link>
                 </div>
@@ -72,11 +98,13 @@ export const EmailDetail = ({ configId, imapUid }: { configId: string; imapUid: 
                         <h1 className="text-3xl font-bold text-gray-900 mb-6">
                             {email.subject || '(No Subject)'}
                         </h1>
-                        
+
                         <div className="space-y-3">
                             <div className="flex items-start gap-3">
                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                                    {email.from_address?.charAt(0).toUpperCase() || '?'}
+                                    {email.from_address
+                                        ?.charAt(0)
+                                        .toUpperCase() || '?'}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline gap-2 flex-wrap">
@@ -85,7 +113,9 @@ export const EmailDetail = ({ configId, imapUid }: { configId: string; imapUid: 
                                         </span>
                                         {extractEmail(email.from_address) && (
                                             <span className="text-gray-500 text-sm">
-                                                {extractEmail(email.from_address)}
+                                                {extractEmail(
+                                                    email.from_address
+                                                )}
                                             </span>
                                         )}
                                     </div>
@@ -94,13 +124,16 @@ export const EmailDetail = ({ configId, imapUid }: { configId: string; imapUid: 
                                     </div>
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                    {email.date_sent && new Date(email.date_sent).toLocaleString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                        hour: 'numeric',
-                                        minute: '2-digit'
-                                    })}
+                                    {email.date_sent &&
+                                        new Date(
+                                            email.date_sent
+                                        ).toLocaleString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                            hour: 'numeric',
+                                            minute: '2-digit',
+                                        })}
                                 </div>
                             </div>
                         </div>

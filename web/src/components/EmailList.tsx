@@ -1,5 +1,6 @@
-import { useEmails } from '@/api/emails';
 import { Link } from '@tanstack/react-router';
+
+import { useEmails } from '@/api/emails';
 
 export function EmailList({ configId }: { configId: number }) {
     const { data, isLoading, error } = useEmails(configId);
@@ -38,7 +39,10 @@ export function EmailList({ configId }: { configId: number }) {
                     <Link
                         key={email.imap_uid}
                         to="/mail/$config/$imap_uid"
-                        params={{ config: String(configId), imap_uid: String(email.imap_uid) }}
+                        params={{
+                            config: String(configId),
+                            imap_uid: String(email.imap_uid),
+                        }}
                         className="block border rounded-lg p-4 hover:bg-gray-50 transition-colors hover:shadow-md"
                     >
                         <div className="flex justify-between items-start">
@@ -58,7 +62,9 @@ export function EmailList({ configId }: { configId: number }) {
                             <div className="text-sm text-gray-500">
                                 {email.created_at && (
                                     <span>
-                                        {new Date(email.created_at).toLocaleDateString()}
+                                        {new Date(
+                                            email.created_at
+                                        ).toLocaleDateString()}
                                     </span>
                                 )}
                             </div>

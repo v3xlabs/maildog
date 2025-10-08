@@ -114,12 +114,16 @@ impl Email {
         .execute(pool)
         .await?;
 
-        Self::find_by_imap_uid(pool, email.imap_uid, email.imap_config_id).await?
+        Self::find_by_imap_uid(pool, email.imap_uid, email.imap_config_id)
+            .await?
             .ok_or(sqlx::Error::RowNotFound)
     }
 
     /// Insert multiple emails in a single transaction for better performance
-    pub async fn insert_batch(pool: &sqlx::SqlitePool, emails: Vec<NewEmail>) -> Result<usize, sqlx::Error> {
+    pub async fn insert_batch(
+        pool: &sqlx::SqlitePool,
+        emails: Vec<NewEmail>,
+    ) -> Result<usize, sqlx::Error> {
         if emails.is_empty() {
             return Ok(0);
         }
@@ -156,7 +160,7 @@ impl Email {
             )
             .execute(&mut *tx)
             .await?;
-            
+
             count += 1;
         }
 
@@ -164,14 +168,18 @@ impl Email {
         Ok(count)
     }
 
-    pub async fn find_by_imap_uid(pool: &sqlx::SqlitePool, imap_uid: i64, imap_config_id: Option<i64>) -> Result<Option<Email>, sqlx::Error> {
+    pub async fn find_by_imap_uid(
+        pool: &sqlx::SqlitePool,
+        imap_uid: i64,
+        imap_config_id: Option<i64>,
+    ) -> Result<Option<Email>, sqlx::Error> {
         sqlx::query_as::<_, Email>(
             r#"SELECT 
                 id, imap_uid, message_id, subject, from_address, to_address, cc_address,
                 bcc_address, reply_to, date_sent, date_maildog_fetched, body_text, body_html,
                 raw_message, flags, size_bytes, has_attachments, folder_name, created_at,
                 updated_at, imap_config_id
-            FROM emails WHERE imap_uid = ? AND (imap_config_id = ? OR imap_config_id IS NULL)"#
+            FROM emails WHERE imap_uid = ? AND (imap_config_id = ? OR imap_config_id IS NULL)"#,
         )
         .bind(imap_uid)
         .bind(imap_config_id)
@@ -179,25 +187,31 @@ impl Email {
         .await
     }
 
-    pub async fn get_highest_imap_uid(pool: &sqlx::SqlitePool, imap_config_id: i64) -> Result<Option<i64>, sqlx::Error> {
+    pub async fn get_highest_imap_uid(
+        pool: &sqlx::SqlitePool,
+        imap_config_id: i64,
+    ) -> Result<Option<i64>, sqlx::Error> {
         let result = sqlx::query!(
             r#"SELECT MAX(imap_uid) as "max_imap_uid: i64" FROM emails WHERE imap_config_id = ?"#,
             imap_config_id
         )
         .fetch_one(pool)
         .await?;
-        
+
         Ok(result.max_imap_uid)
     }
 
-    pub async fn list_recent(pool: &sqlx::SqlitePool, limit: i64) -> Result<Vec<Email>, sqlx::Error> {
+    pub async fn list_recent(
+        pool: &sqlx::SqlitePool,
+        limit: i64,
+    ) -> Result<Vec<Email>, sqlx::Error> {
         sqlx::query_as::<_, Email>(
             r#"SELECT 
                 id, imap_uid, message_id, subject, from_address, to_address, cc_address,
                 bcc_address, reply_to, date_sent, date_maildog_fetched, body_text, body_html,
                 raw_message, flags, size_bytes, has_attachments, folder_name, created_at,
                 updated_at, imap_config_id
-            FROM emails ORDER BY date_maildog_fetched DESC LIMIT ?"#
+            FROM emails ORDER BY date_maildog_fetched DESC LIMIT ?"#,
         )
         .bind(limit)
         .fetch_all(pool)
@@ -252,7 +266,10 @@ impl IngestionLog {
 }
 
 impl ImapConfig {
-    pub async fn get_by_id(pool: &sqlx::SqlitePool, id: i64) -> Result<Option<ImapConfig>, sqlx::Error> {
+    pub async fn get_by_id(
+        pool: &sqlx::SqlitePool,
+        id: i64,
+    ) -> Result<Option<ImapConfig>, sqlx::Error> {
         sqlx::query_as!(
             ImapConfig,
             r#"SELECT 
@@ -295,63 +312,61 @@ impl ImapConfig {
     pub fn decrypt_password(&self, passphrase: &str) -> Result<String, sqlx::Error> {
         use aes_gcm::{
             aead::{Aead, KeyInit},
-            Aes256Gcm, Nonce
+            Aes256Gcm, Nonce,
         };
-        use sha2::{Sha256, Digest};
-        
+        use sha2::{Digest, Sha256};
+
         // The encrypted data format is: [12-byte nonce][ciphertext]
         if self.password_encrypted.len() < 12 {
             return Err(sqlx::Error::Decode("Encrypted data too short".into()));
         }
-        
+
         // Derive a 32-byte key from the passphrase using SHA-256
         let mut hasher = Sha256::new();
         hasher.update(passphrase.as_bytes());
         let key_bytes = hasher.finalize();
-        
+
         // Split nonce and ciphertext
         let (nonce_bytes, ciphertext) = self.password_encrypted.split_at(12);
         let nonce = Nonce::from_slice(nonce_bytes);
-        
+
         // Decrypt
         let cipher = Aes256Gcm::new_from_slice(&key_bytes)
             .map_err(|e| sqlx::Error::Decode(format!("Invalid key: {}", e).into()))?;
-        
+
         let plaintext = cipher
             .decrypt(nonce, ciphertext)
             .map_err(|e| sqlx::Error::Decode(format!("Decryption failed: {}", e).into()))?;
-        
-        String::from_utf8(plaintext)
-            .map_err(|e| sqlx::Error::Decode(Box::new(e)))
+
+        String::from_utf8(plaintext).map_err(|e| sqlx::Error::Decode(Box::new(e)))
     }
 
     /// Encrypt a password using the provided passphrase
     pub fn encrypt_password(password: &str, passphrase: &str) -> Vec<u8> {
         use aes_gcm::{
             aead::{Aead, KeyInit, OsRng},
-            Aes256Gcm, Nonce
+            Aes256Gcm, Nonce,
         };
-        use sha2::{Sha256, Digest};
         use rand::RngCore;
-        
+        use sha2::{Digest, Sha256};
+
         // Derive a 32-byte key from the passphrase using SHA-256
         let mut hasher = Sha256::new();
         hasher.update(passphrase.as_bytes());
         let key_bytes = hasher.finalize();
-        
+
         // Generate a random 12-byte nonce
         let mut nonce_bytes = [0u8; 12];
         OsRng.fill_bytes(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
-        
+
         // Encrypt
-        let cipher = Aes256Gcm::new_from_slice(&key_bytes)
-            .expect("Invalid key length");
-        
+        let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("Invalid key length");
+
         let ciphertext = cipher
             .encrypt(nonce, password.as_bytes())
             .expect("Encryption failed");
-        
+
         // Return [nonce || ciphertext]
         let mut result = Vec::with_capacity(12 + ciphertext.len());
         result.extend_from_slice(&nonce_bytes);
@@ -371,7 +386,7 @@ impl ImapConfig {
     ) -> Result<i64, sqlx::Error> {
         let port = mail_port as i64;
         let password_encrypted = Self::encrypt_password(&password, passphrase);
-        
+
         sqlx::query!(
             r#"
             INSERT INTO imap_config (name, mail_host, mail_port, username, password_encrypted, use_tls)
@@ -409,7 +424,7 @@ impl ImapConfig {
         sqlx::query!("DELETE FROM imap_config WHERE id = ?", id)
             .execute(pool)
             .await?;
-        
+
         Ok(())
     }
 }

@@ -2,7 +2,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use dotenvy::dotenv;
-use poem::{get, handler, listener::TcpListener, middleware::Cors, web::Html, EndpointExt, Route, Server};
+use poem::{
+    get, handler, listener::TcpListener, middleware::Cors, web::Html, EndpointExt, Route, Server,
+};
 use poem_openapi::{OpenApi, OpenApiService};
 use routes::{EmailApi, HealthApi, ImapConfigApi};
 use state::AppState;
@@ -35,7 +37,6 @@ fn scalar_docs() -> Html<&'static str> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     // tracing_subscriber::fmt::init();
     let format = fmt::format()
         .with_level(true) // show log level
@@ -64,7 +65,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app_state = Arc::new(AppState::new(ingestion_tx).await?);
 
-
     match crate::database::models::ImapConfig::get_all(&app_state.db_pool).await {
         Ok(configs) if configs.is_empty() => {
             info!("No IMAP configurations found. Please configure via the web interface.");
@@ -72,7 +72,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(configs) => {
             info!("Found {} IMAP configuration(s)", configs.len());
             for config in &configs {
-                info!("  - {} ({}@{})", config.name, config.username, config.mail_host);
+                info!(
+                    "  - {} ({}@{})",
+                    config.name, config.username, config.mail_host
+                );
             }
         }
         Err(e) => {
@@ -88,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let api_service = OpenApiService::new(get_api(), "Maildog API", env!("CARGO_PKG_VERSION"))
-        .server("http://localhost:3000/api")  // Use localhost instead of 127.0.0.1
+        .server("http://localhost:3000/api") // Use localhost instead of 127.0.0.1
         .description("Maildog - Email ingestion and management service");
 
     let spec = api_service.spec_endpoint();
@@ -102,7 +105,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Cors::new()
                 .allow_credentials(true)
                 .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
-                .allow_headers(vec!["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"])
+                .allow_headers(vec![
+                    "Content-Type",
+                    "Authorization",
+                    "Accept",
+                    "Origin",
+                    "X-Requested-With",
+                ])
                 .allow_origin("http://localhost:5173"),
         )
         .data(app_state);
@@ -115,7 +124,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(Server::new(TcpListener::bind(host)).run(app).await?)
 }
 
-async fn periodic_email_ingestion(state: Arc<AppState>, mut ingestion_rx: tokio::sync::mpsc::UnboundedReceiver<()>) {
+async fn periodic_email_ingestion(
+    state: Arc<AppState>,
+    mut ingestion_rx: tokio::sync::mpsc::UnboundedReceiver<()>,
+) {
     let mut interval = tokio::time::interval(Duration::from_secs(300)); // 5 minutes
 
     // Run initial ingestion immediately on startup
