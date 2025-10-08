@@ -419,10 +419,6 @@ impl MailIngress {
                 .as_ref()
                 .and_then(|addrs| addrs.first())
                 .and_then(|addr| {
-                    let name = addr
-                        .name
-                        .as_ref()
-                        .and_then(|n| String::from_utf8(n.to_vec()).ok());
                     let mailbox = addr
                         .mailbox
                         .as_ref()
