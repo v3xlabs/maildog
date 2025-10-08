@@ -4,18 +4,6 @@
     @apply text-neutral-800 hover:text-neutral-600 underline;
 }
 
-.h1 {
-    @apply text-3xl font-bold;
-}
-
-.h2 {
-    @apply text-2xl font-bold;
-}
-
-.h3 {
-    @apply text-xl font-bold;
-}
-
 .hr {
     @apply border-t border-neutral-200 my-4;
 }
@@ -38,6 +26,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-navbar: var(--navbar);
+  --color-sidebar: var(--sidebar);
   --color-card: var(--card);
   --color-card-border: var(--card-border);
   --color-card-foreground: var(--card-foreground);
@@ -73,17 +62,17 @@
 
 @font-face {
   font-family: 'Nunito Sans';
-  src: url('/fonts/Nunito_Sans/NunitoSans-VariableFont.ttf') format('truetype');
+  src: url('/fonts/NunitoSans-VariableFont.ttf') format('truetype');
 }
 
 :root {
-
-  --background: #fafafa;
+  --background: #F7F8F5;
   --navbar: #ffffff;
+  --sidebar: #E5E7DF;
 
   --card: #ffffff;
   --card-foreground: #dedfe0;
-  --card-border: #e5e7eb;
+  --card-border: #DBDED4;
 
   --text-primary: #000000;
   --text-secondary: #666666;

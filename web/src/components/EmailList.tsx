@@ -34,30 +34,25 @@ export function EmailList({ configId }: { configId: number }) {
                 </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="">
                 {data.emails.map((email) => (
                     <Link
                         key={email.imap_uid}
-                        to="/mail/$config/$imap_uid"
+                        to="/m/$mail/$imap_uid"
                         params={{
-                            config: String(configId),
+                            mail: String(configId),
                             imap_uid: String(email.imap_uid),
                         }}
-                        className="block border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                        className="block px-4 py-1 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
                     >
                         <div className="flex justify-between items-start">
                             <div className="flex-1">
-                                <h3 className="font-semibold text-lg">
+                                <h3 className="font-semibold text-md">
                                     {email.subject || '(No Subject)'}
                                 </h3>
                                 <p className="text-sm text-gray-600">
                                     From: {email.from_address || 'Unknown'}
                                 </p>
-                                {email.to_address && (
-                                    <p className="text-sm text-gray-600">
-                                        To: {email.to_address}
-                                    </p>
-                                )}
                             </div>
                             <div className="text-sm text-gray-500">
                                 {email.created_at && (

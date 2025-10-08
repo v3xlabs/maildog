@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE imap_config \n            SET name = ?,\n                mail_host = ?,\n                mail_port = ?,\n                username = ?,\n                password_encrypted = ?,\n                use_tls = ?,\n                updated_at = CURRENT_TIMESTAMP\n            WHERE id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "c6cad7e16102c5f2bd5acda0fa39c607b7e84e67f6800a19f0ad54b9cb75ea9c"
+}

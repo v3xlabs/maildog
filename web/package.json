@@ -18,6 +18,8 @@
   "dependencies": {
     "@eslint/eslintrc": "^3.1.0",
     "@eslint/js": "^9.8.0",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-slot": "^1.1.0",
     "@tailwindcss/vite": "^4.1.13",
     "@tanstack/react-query": "^5.52.2",
@@ -30,6 +32,7 @@
     "eslint-plugin-unused-imports": "^4.0.1",
     "globals": "^15.8.0",
     "leaflet": "^1.9.4",
+    "letterparser": "^0.1.8",
     "openapi-hooks": "^0.0.6",
     "postcss": "^8.4.38",
     "react": "^18.3.1",

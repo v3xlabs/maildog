@@ -18,7 +18,7 @@ export const OnboardingFlow = () => {
         use_tls: boolean;
         is_active: boolean;
     }) => {
-        createConfig.mutate({ ...data  });
+        createConfig.mutate({ ...data });
     };
 
     if (step === 'welcome') {

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            INSERT INTO imap_config (name, mail_host, mail_port, username, password_encrypted, use_tls)\n            VALUES (?, ?, ?, ?, ?, ?)\n            ON CONFLICT(name) DO UPDATE SET\n                mail_host = excluded.mail_host,\n                mail_port = excluded.mail_port,\n                username = excluded.username,\n                password_encrypted = excluded.password_encrypted,\n                use_tls = excluded.use_tls,\n                updated_at = CURRENT_TIMESTAMP\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "cc7e8366c79d00b1217860944a0d58a916a6a0480b94ef31cdb51094ab1d21ca"
+}

@@ -1,26 +1,7 @@
 import { Link } from '@tanstack/react-router';
 
-import { useEmail } from '../api/emails';
-
-const extractName = (emailAddr: string | undefined) => {
-    if (!emailAddr) return 'Unknown';
-
-    const parts = emailAddr.split('<');
-
-    if (parts.length > 1 && parts[0]) {
-        return parts[0].trim();
-    }
-
-    return emailAddr;
-};
-
-const extractEmail = (email: string | undefined) => {
-    if (!email) return;
-
-    const match = email.match(/<(.+)>/);
-
-    return match?.[1];
-};
+import { useEmail } from '../../api/emails';
+import { EmailPreviewHeader } from './EmailHeader';
 
 export const EmailDetail = ({
     configId,
@@ -82,11 +63,11 @@ export const EmailDetail = ({
     }
 
     return (
-        <div className="h-full overflow-auto bg-gray-50">
+        <div className="h-full overflow-auto">
             <div className="max-w-5xl mx-auto p-6">
                 <div className="mb-4">
                     <Link
-                        to="/"
+                        to=".."
                         className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
                     >
                         <span>←</span> Back to inbox
@@ -95,48 +76,11 @@ export const EmailDetail = ({
 
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                     <div className="p-8 border-b border-gray-200">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+                        <h1 className="text-2xl font-bold text-gray-900 mb-6">
                             {email.subject || '(No Subject)'}
                         </h1>
 
-                        <div className="space-y-3">
-                            <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                                    {email.from_address
-                                        ?.charAt(0)
-                                        .toUpperCase() || '?'}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-baseline gap-2 flex-wrap">
-                                        <span className="font-semibold text-gray-900">
-                                            {extractName(email.from_address)}
-                                        </span>
-                                        {extractEmail(email.from_address) && (
-                                            <span className="text-gray-500 text-sm">
-                                                {extractEmail(
-                                                    email.from_address
-                                                )}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="text-sm text-gray-600 mt-1">
-                                        to {email.to_address}
-                                    </div>
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                    {email.date_sent &&
-                                        new Date(
-                                            email.date_sent
-                                        ).toLocaleString('en-US', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            year: 'numeric',
-                                            hour: 'numeric',
-                                            minute: '2-digit',
-                                        })}
-                                </div>
-                            </div>
-                        </div>
+                        <EmailPreviewHeader email={email} />
 
                         {email.has_attachments && (
                             <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm">

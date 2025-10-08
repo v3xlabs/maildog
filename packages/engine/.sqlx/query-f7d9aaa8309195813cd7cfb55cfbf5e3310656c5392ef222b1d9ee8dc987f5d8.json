@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE ingestion_log \n            SET completed_at = CURRENT_TIMESTAMP,\n                emails_processed = ?,\n                emails_new = ?,\n                emails_updated = ?,\n                status = ?,\n                error_message = ?\n            WHERE id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "f7d9aaa8309195813cd7cfb55cfbf5e3310656c5392ef222b1d9ee8dc987f5d8"
+}

@@ -27,6 +27,6 @@ const component = () => {
     return <AppView />;
 };
 
-export const Route = createLazyFileRoute('/')({
+export const Route = createLazyFileRoute('/_layout/')({
     component,
 });

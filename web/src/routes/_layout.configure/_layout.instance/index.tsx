@@ -5,7 +5,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { useInstanceConfig } from '../../../hooks/useInstanceConfig';
 
-export const Route = createFileRoute('/configure/_layout/instance/')({
+export const Route = createFileRoute('/_layout/configure/_layout/instance/')({
     component: () => {
         const suggestedKeycloakUrl = (import.meta as any).env.VITE_INSTANCE_URL;
         const navigate = useNavigate();
