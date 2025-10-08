@@ -24,7 +24,7 @@ export const OnboardingFlow = () => {
     if (step === 'welcome') {
         return (
             <div className="min-h-screen flex items-center justify-center p-4">
-                <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
+                <div className="max-w-md w-full bg-white rounded-2xl p-8 space-y-6">
                     <div className="text-center space-y-4">
                         <div className="flex justify-center">
                             <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
@@ -54,7 +54,7 @@ export const OnboardingFlow = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
+            <div className="max-w-md w-full bg-white rounded-2xl p-8 space-y-6">
                 <div className="text-center space-y-2">
                     <h2 className="text-2xl font-bold text-gray-900">
                         Configure Your Email

@@ -43,7 +43,7 @@ export function EmailList({ configId }: { configId: number }) {
                             config: String(configId),
                             imap_uid: String(email.imap_uid),
                         }}
-                        className="block border rounded-lg p-4 hover:bg-gray-50 transition-colors hover:shadow-md"
+                        className="block border rounded-lg p-4 hover:bg-gray-50 transition-colors"
                     >
                         <div className="flex justify-between items-start">
                             <div className="flex-1">
