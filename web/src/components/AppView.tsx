@@ -31,9 +31,9 @@ export const AppView = () => {
         is_active: boolean;
     };
 
-    const createConfig = useCreateImapConfig();
-    const updateConfig = useUpdateImapConfig();
-    const deleteConfig = useDeleteImapConfig();
+    const { mutate: createConfig, isPending: createPending } = useCreateImapConfig();
+    const { mutate: updateConfig, isPending: updatePending } = useUpdateImapConfig();
+    const { mutate: deleteConfig, isPending: deletePending } = useDeleteImapConfig();
 
     const configs = data?.configs || [];
 
@@ -44,14 +44,14 @@ export const AppView = () => {
     const selectedConfig = configs.find((c) => c.id === selectedConfigId);
 
     const handleCreate = (formData: FormResponse) => {
-        createConfig.mutate(formData, {
+        createConfig(formData, {
             onSuccess: () => setShowAddForm(false),
         });
     };
 
     const handleUpdate = (formData: FormResponse) => {
         if (editingConfig) {
-            updateConfig.mutate(
+            updateConfig(
                 { id: editingConfig.id, data: formData },
                 {
                     onSuccess: () => setEditingConfig(null),
@@ -62,7 +62,7 @@ export const AppView = () => {
 
     const handleDelete = (id: number) => {
         if (confirm('Are you sure you want to delete this configuration?')) {
-            deleteConfig.mutate(id, {
+            deleteConfig(id, {
                 onSuccess: () => {
                     // If we deleted the selected config, select another one
                     if (selectedConfigId === id) {
@@ -91,7 +91,7 @@ export const AppView = () => {
                     <ImapConfigForm
                         onSubmit={handleCreate}
                         onCancel={() => setShowAddForm(false)}
-                        isLoading={createConfig.isPending}
+                        isLoading={createPending}
                     />
                 </div>
             </div>
@@ -109,7 +109,7 @@ export const AppView = () => {
                         config={editingConfig}
                         onSubmit={handleUpdate}
                         onCancel={() => setEditingConfig(null)}
-                        isLoading={updateConfig.isPending}
+                        isLoading={updatePending}
                     />
                 </div>
             </div>
@@ -193,7 +193,7 @@ export const AppView = () => {
                                                 handleDelete(config.id);
                                             }}
                                             className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                                            disabled={deleteConfig.isPending}
+                                            disabled={deletePending}
                                         >
                                             <FiTrash2 className="w-3 h-3" />
                                         </button>

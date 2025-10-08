@@ -250,7 +250,7 @@ impl MailIngress {
 
         // Check if email already exists
         let existing =
-            Email::find_by_imap_uid(&self.pool, imap_uid, Some(self.imap_config_id)).await?;
+            Email::find_by_imap_uid(&self.pool, imap_uid, self.imap_config_id).await?;
         if existing.is_some() {
             return Ok(None); // Email already exists
         }
@@ -381,7 +381,7 @@ impl MailIngress {
             size_bytes: Some(body.len() as i64),
             has_attachments: false,
             folder_name: "INBOX".to_string(),
-            imap_config_id: Some(self.imap_config_id),
+            imap_config_id: self.imap_config_id,
         };
 
         Ok(Some(new_email))
@@ -391,7 +391,7 @@ impl MailIngress {
         let imap_uid = fetch.uid.context("No UID found")? as i64;
 
         let existing =
-            Email::find_by_imap_uid(&self.pool, imap_uid, Some(self.imap_config_id)).await?;
+            Email::find_by_imap_uid(&self.pool, imap_uid, self.imap_config_id).await?;
         if existing.is_some() {
             info!("Email UID {} already exists, skipping", imap_uid);
             return Ok(false); // Not new
@@ -523,7 +523,7 @@ impl MailIngress {
             size_bytes: Some(body.len() as i64),
             has_attachments: false, // TODO: Detect attachments
             folder_name: "INBOX".to_string(),
-            imap_config_id: Some(self.imap_config_id),
+            imap_config_id: self.imap_config_id,
         };
 
         let _email = Email::insert(&self.pool, new_email).await?;

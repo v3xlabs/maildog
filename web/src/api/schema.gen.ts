@@ -272,7 +272,7 @@ export interface components {
             to_address?: string;
             created_at: string;
             /** Format: int64 */
-            imap_config_id?: number;
+            imap_config_id: number;
         };
         /**
          * EmailResponse
@@ -301,7 +301,7 @@ export interface components {
             created_at: string;
             updated_at: string;
             /** Format: int64 */
-            imap_config_id?: number;
+            imap_config_id: number;
         };
         /** EmailsListResponse */
         EmailsListResponse: {

@@ -28,7 +28,7 @@ pub struct Email {
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
-    pub imap_config_id: Option<i64>,
+    pub imap_config_id: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,7 +49,7 @@ pub struct NewEmail {
     pub size_bytes: Option<i64>,
     pub has_attachments: bool,
     pub folder_name: String,
-    pub imap_config_id: Option<i64>,
+    pub imap_config_id: i64,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
@@ -171,7 +171,7 @@ impl Email {
     pub async fn find_by_imap_uid(
         pool: &sqlx::SqlitePool,
         imap_uid: i64,
-        imap_config_id: Option<i64>,
+        imap_config_id: i64,
     ) -> Result<Option<Email>, sqlx::Error> {
         sqlx::query_as::<_, Email>(
             r#"SELECT 
@@ -179,7 +179,7 @@ impl Email {
                 bcc_address, reply_to, date_sent, date_maildog_fetched, body_text, body_html,
                 raw_message, flags, size_bytes, has_attachments, folder_name, created_at,
                 updated_at, imap_config_id
-            FROM emails WHERE imap_uid = ? AND (imap_config_id = ? OR imap_config_id IS NULL)"#,
+            FROM emails WHERE imap_uid = ? AND imap_config_id = ?"#,
         )
         .bind(imap_uid)
         .bind(imap_config_id)

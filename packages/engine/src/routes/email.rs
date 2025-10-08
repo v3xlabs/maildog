@@ -19,7 +19,7 @@ pub struct EmailListItem {
     pub from_address: Option<String>,
     pub to_address: Option<String>,
     pub created_at: String,
-    pub imap_config_id: Option<i64>,
+    pub imap_config_id: i64,
 }
 
 /// API-friendly email representation with RFC3339 datetime strings
@@ -44,7 +44,7 @@ pub struct EmailResponse {
     pub folder_name: Option<String>,
     pub created_at: String,
     pub updated_at: String,
-    pub imap_config_id: Option<i64>,
+    pub imap_config_id: i64,
 }
 
 impl From<Email> for EmailResponse {
@@ -135,7 +135,7 @@ impl EmailApi {
             SELECT 
                 imap_uid, subject, from_address, to_address, 
                 date_sent as "date_sent: OffsetDateTime", 
-                imap_config_id
+                imap_config_id as "imap_config_id!"
             FROM emails
             WHERE imap_config_id = ?
             ORDER BY COALESCE(date_sent, date_maildog_fetched) DESC
