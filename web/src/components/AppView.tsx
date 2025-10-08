@@ -21,26 +21,35 @@ export const AppView = () => {
         null
     );
 
+    type FormResponse = {
+        name: string;
+        mail_host: string;
+        mail_port: number;
+        username: string;
+        password: string;
+        use_tls: boolean;
+        is_active: boolean;
+    };
+
     const createConfig = useCreateImapConfig();
     const updateConfig = useUpdateImapConfig();
     const deleteConfig = useDeleteImapConfig();
 
     const configs = data?.configs || [];
 
-    // Auto-select first config if none selected
     if (selectedConfigId === null && configs.length > 0 && configs[0]) {
         setSelectedConfigId(configs[0].id);
     }
 
     const selectedConfig = configs.find((c) => c.id === selectedConfigId);
 
-    const handleCreate = (formData: any) => {
+    const handleCreate = (formData: FormResponse) => {
         createConfig.mutate(formData, {
             onSuccess: () => setShowAddForm(false),
         });
     };
 
-    const handleUpdate = (formData: any) => {
+    const handleUpdate = (formData: FormResponse) => {
         if (editingConfig) {
             updateConfig.mutate(
                 { id: editingConfig.id, data: formData },
@@ -64,7 +73,7 @@ export const AppView = () => {
                         setSelectedConfigId(
                             remainingConfigs.length > 0 && remainingConfigs[0]
                                 ? remainingConfigs[0].id
-                                : gnull
+                                : null
                         );
                     }
                 },

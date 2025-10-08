@@ -35,7 +35,7 @@ export const ImapConfigForm = ({
         username: config?.username || '',
         password: '',
         use_tls: config?.use_tls ?? true,
-        is_active: config?.is_active ?? false,
+        is_active: true,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -122,21 +122,6 @@ export const ImapConfigForm = ({
                     className="w-4 h-4"
                 />
                 <span className="text-sm">Use TLS/SSL</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                    type="checkbox"
-                    checked={formData.is_active}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            is_active: e.target.checked,
-                        })
-                    }
-                    className="w-4 h-4"
-                />
-                <span className="text-sm">Set as active configuration</span>
             </label>
 
             <div className="flex gap-2 justify-end">
