@@ -4,6 +4,8 @@ import type { ImapConfigResponse } from '@/api/imapConfig';
 
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
+import { DialogClose } from '@radix-ui/react-dialog';
+import { PasswordToggleField } from './ui/PasswordInput';
 
 interface ImapConfigFormProperties {
     config?: ImapConfigResponse;
@@ -17,6 +19,7 @@ interface ImapConfigFormProperties {
         is_active: boolean;
     }) => void;
     onCancel?: () => void;
+    onDelete?: () => void;
     isLoading?: boolean;
     submitLabel?: string;
 }
@@ -25,6 +28,7 @@ export const ImapConfigForm = ({
     config,
     onSubmit,
     onCancel,
+    onDelete,
     isLoading,
     submitLabel = 'Save',
 }: ImapConfigFormProperties) => {
@@ -45,6 +49,8 @@ export const ImapConfigForm = ({
             mail_port: Number.parseInt(formData.mail_port, 10),
         });
     };
+
+    const canDelete = onDelete;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -96,13 +102,12 @@ export const ImapConfigForm = ({
                 className="w-full border rounded px-3 py-2"
             />
 
-            <Input
+            <PasswordToggleField
                 aria-label={
                     config
                         ? 'Password (leave empty to keep current)'
                         : 'Password'
                 }
-                type="password"
                 value={formData.password}
                 onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
@@ -124,20 +129,29 @@ export const ImapConfigForm = ({
                 <span className="text-sm">Use TLS/SSL</span>
             </label>
 
-            <div className="flex gap-2 justify-end">
-                {onCancel && (
-                    <Button type="button" variant="outline" onClick={onCancel}>
-                        Cancel
+            <div className="flex gap-2 justify-between">
+                <div>
+                    {canDelete && (
+                        <Button type="button" variant="destructive" onClick={onDelete}>
+                            Delete
+                        </Button>
+                    )}
+                </div>
+                <div className="flex gap-2">
+                    <DialogClose asChild>
+                        <Button type="button" variant="outline">
+                            Cancel
+                        </Button>
+                    </DialogClose>
+                    <Button
+                        type="submit"
+                        variant="accent"
+                        tone="blue"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? 'Saving...' : submitLabel}
                     </Button>
-                )}
-                <Button
-                    type="submit"
-                    variant="accent"
-                    tone="blue"
-                    disabled={isLoading}
-                >
-                    {isLoading ? 'Saving...' : submitLabel}
-                </Button>
+                </div>
             </div>
         </form>
     );

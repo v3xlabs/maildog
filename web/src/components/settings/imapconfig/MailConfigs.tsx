@@ -1,6 +1,8 @@
 import { useEmails, useImapConfigs } from "@/api";
-import { Button } from "../ui/Button";
+import { Button } from "@/components/ui/Button";
 import { LuPencil, LuPlus, LuRefreshCcw, LuTrash } from "react-icons/lu";
+import { EditImapConfigButton } from "./EditImapConfig";
+import { AddImapConfigButton } from "./AddImapConfig";
 
 export const MailConfigSettings = () => {
     const { data: configs } = useImapConfigs();
@@ -28,9 +30,7 @@ export const MailConfigSettings = () => {
                                 <td>{config.name}</td>
                                 <td>{config.username}</td>
                                 <td className="py-0.5">
-                                    <Button variant="secondary" size="xs">
-                                        <LuPencil />
-                                    </Button>
+                                    <EditImapConfigButton config={config} />
                                     <Button variant="secondary" size="xs">
                                         <LuRefreshCcw />
                                     </Button>
@@ -41,9 +41,7 @@ export const MailConfigSettings = () => {
                 </table>
             </div>
             <div className="flex justify-end border-t p-2">
-                <Button variant="secondary" size="xs">
-                    <LuPlus /> Add
-                </Button>
+                <AddImapConfigButton />
             </div>
         </div>
     )

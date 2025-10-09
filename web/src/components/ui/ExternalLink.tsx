@@ -1,6 +1,5 @@
 // instead of being an a tag this link should be a button, that triggers a dialog, showing the entire url, domain, and path
 
-import { DialogDescription } from '@radix-ui/react-dialog';
 import { PropsWithChildren } from 'react';
 
 import {
@@ -8,6 +7,7 @@ import {
     DialogRoot,
     DialogTitle,
     DialogTrigger,
+    DialogDescription,
 } from './Dialog';
 
 export type ExternalLinkProps = PropsWithChildren<{

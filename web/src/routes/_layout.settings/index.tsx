@@ -1,4 +1,4 @@
-import { MailConfigSettings } from '@/components/settings/MailConfigs'
+import { MailConfigSettings } from '@/components/settings/imapconfig/MailConfigs'
 import { Button } from '@/components/ui/Button'
 import { createFileRoute, Link } from '@tanstack/react-router'
 
