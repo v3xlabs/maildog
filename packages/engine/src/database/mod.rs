@@ -1,7 +1,7 @@
-use sqlx::ConnectOptions;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
-use sqlx::migrate::MigrateDatabase;
+use sqlx::ConnectOptions;
 
+pub mod models;
 pub mod user;
 
 pub async fn init_db(database_url: &url::Url) -> Result<SqlitePool, sqlx::Error> {
@@ -10,9 +10,7 @@ pub async fn init_db(database_url: &url::Url) -> Result<SqlitePool, sqlx::Error>
     let pool = SqlitePool::connect_with(options).await?;
 
     // Run migrations
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await?;
+    sqlx::migrate!("./migrations").run(&pool).await?;
 
     Ok(pool)
 }

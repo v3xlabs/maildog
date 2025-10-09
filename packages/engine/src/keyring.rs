@@ -1,3 +1,4 @@
+use base64::prelude::*;
 use rand::Rng;
 use tracing::{info, warn};
 
@@ -14,7 +15,10 @@ impl Keyring {
     pub fn init() -> Result<Self, MailDogError> {
         // If set by environment variable, use this
         if let Ok(passphrase) = std::env::var("MAILDOG_PASSPHRASE") {
-            info!("Passphrase loaded from environment variable: len {}", passphrase.len());
+            info!(
+                "Passphrase loaded from environment variable: len {}",
+                passphrase.len()
+            );
             return Ok(Self { passphrase });
         }
 
@@ -26,11 +30,17 @@ impl Keyring {
 
                 warn!("No passphrase found in keyring, a new token will be generated");
                 let passphrase = rand::thread_rng().gen::<[u8; 32]>();
-                let new_passphrase =
-                    String::from_utf8(passphrase.to_vec()).map_err(MailDogError::FromUtf8)?;
-                entry
-                    .set_password(&new_passphrase)
-                    .map_err(MailDogError::KeyringIO)?;
+                let new_passphrase = base64::prelude::BASE64_STANDARD.encode(passphrase);
+
+                if let Err(save_error) = entry.set_password(&new_passphrase) {
+                    warn!("Could not save passphrase to keyring: {:?}", save_error);
+                    warn!(
+                        "Consider setting MAILDOG_PASSPHRASE environment variable for persistence"
+                    );
+                } else {
+                    info!("New passphrase saved to keyring");
+                }
+
                 new_passphrase
             }
         };
@@ -38,5 +48,9 @@ impl Keyring {
         info!("Passphrase loaded from keyring: len {}", passphrase.len());
 
         Ok(Self { passphrase })
+    }
+
+    pub fn get_passphrase(&self) -> String {
+        self.passphrase.clone()
     }
 }

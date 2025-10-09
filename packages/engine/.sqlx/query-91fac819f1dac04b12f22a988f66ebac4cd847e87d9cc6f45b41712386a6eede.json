@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO ingestion_log (folder_name) VALUES (?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "91fac819f1dac04b12f22a988f66ebac4cd847e87d9cc6f45b41712386a6eede"
+}

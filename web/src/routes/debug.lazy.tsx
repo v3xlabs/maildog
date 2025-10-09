@@ -5,9 +5,7 @@ import { Input } from '../components/ui/Input';
 
 const component = () => {
     return (
-        <div
-            className="p-2 w-full h-full pt-4 md:pt-16"
-        >
+        <div className="p-2 w-full h-full pt-4 md:pt-16">
             <div className="max-w-lg mx-auto space-y-4">
                 <h1 className="text-2xl font-bold text-text-secondary">
                     Configuration

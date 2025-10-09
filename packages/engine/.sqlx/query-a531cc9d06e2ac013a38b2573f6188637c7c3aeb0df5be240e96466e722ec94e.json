@@ -1,0 +1,68 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT \n                id as \"id!\",\n                name as \"name!\",\n                mail_host as \"mail_host!\",\n                mail_port as \"mail_port!\",\n                username as \"username!\",\n                password_encrypted as \"password_encrypted!\",\n                use_tls as \"use_tls!\",\n                created_at as \"created_at!\",\n                updated_at as \"updated_at!\"\n            FROM imap_config WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name!",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "mail_host!",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "mail_port!",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "username!",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "password_encrypted!",
+        "ordinal": 5,
+        "type_info": "Blob"
+      },
+      {
+        "name": "use_tls!",
+        "ordinal": 6,
+        "type_info": "Bool"
+      },
+      {
+        "name": "created_at!",
+        "ordinal": 7,
+        "type_info": "Datetime"
+      },
+      {
+        "name": "updated_at!",
+        "ordinal": 8,
+        "type_info": "Datetime"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "a531cc9d06e2ac013a38b2573f6188637c7c3aeb0df5be240e96466e722ec94e"
+}

@@ -2,4 +2,7 @@
 .result
 result
 target/
-packages/engine/database.db
+database.db
+database.db-shm
+database.db-wal
+.idea/

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            INSERT INTO emails (\n                imap_uid, message_id, subject, from_address, to_address, cc_address, bcc_address,\n                reply_to, date_sent, body_text, body_html, raw_message, flags, size_bytes,\n                has_attachments, folder_name, imap_config_id\n            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 17
+    },
+    "nullable": []
+  },
+  "hash": "61d8146433deadc0f0d326ec7f1170d4bb1bf0e9a1045c1a09dea802fd9ad2a6"
+}

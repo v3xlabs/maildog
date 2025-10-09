@@ -3,6 +3,4 @@ pub struct User {
     pub username: String,
 }
 
-impl User {
-
-}
+impl User {}

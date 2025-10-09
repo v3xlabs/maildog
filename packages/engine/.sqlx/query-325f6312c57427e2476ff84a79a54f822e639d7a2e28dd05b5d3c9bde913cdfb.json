@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM imap_config WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "325f6312c57427e2476ff84a79a54f822e639d7a2e28dd05b5d3c9bde913cdfb"
+}

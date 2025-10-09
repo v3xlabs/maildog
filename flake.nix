@@ -40,7 +40,9 @@
             source scripts/dev.sh
             # Disable SCCache if enabled
             unset RUSTC_WRAPPER
-            export DATABASE_URL=sqlite://./database.db
+            # get current directory
+            export CURRENT_DIR=$(pwd)
+            export DATABASE_URL=sqlite://$CURRENT_DIR/database.db
           '';
         };
       });

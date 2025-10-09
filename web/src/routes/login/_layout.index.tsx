@@ -4,9 +4,9 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { FiLoader } from 'react-icons/fi';
 import { match } from 'ts-pattern';
 
+import { ConnectionSettings } from '../../components/connection/ConnectionSettings';
 import { Button } from '../../components/ui/Button';
 import { useInstanceConfig } from '../../hooks/useInstanceConfig';
-import { ConnectionSettings } from '../../components/connection/ConnectionSettings';
 
 const component = () => {
     const { instance_url } = useInstanceConfig();
@@ -25,7 +25,7 @@ const component = () => {
             return (await response.json()) as { url: string };
         },
         retry: 1,
-        refetchInterval: 10000,
+        refetchInterval: 10_000,
     });
 
     return (
@@ -59,9 +59,14 @@ const component = () => {
                             )}
                         </div>
                     ))
-                    .with({ isLoading: true, isError: false, isRefetching: false }, () => (
-                        <div>Connecting...</div>
-                    ))
+                    .with(
+                        {
+                            isLoading: true,
+                            isError: false,
+                            isRefetching: false,
+                        },
+                        () => <div>Connecting...</div>
+                    )
                     .otherwise(() => (
                         <div>Something went wrong</div>
                     ))}

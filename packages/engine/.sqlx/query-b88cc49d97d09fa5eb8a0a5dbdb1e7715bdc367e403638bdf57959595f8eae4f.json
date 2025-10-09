@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT MAX(imap_uid) as \"max_imap_uid: i64\" FROM emails WHERE imap_config_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "max_imap_uid: i64",
+        "ordinal": 0,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "b88cc49d97d09fa5eb8a0a5dbdb1e7715bdc367e403638bdf57959595f8eae4f"
+}
