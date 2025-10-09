@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { formatDistanceToNow } from 'date-fns';
 
 import { useEmails } from '@/api/emails';
 
@@ -56,11 +57,17 @@ export function EmailList({ configId }: { configId: number }) {
                             </div>
                             <div className="text-sm text-gray-500">
                                 {email.created_at && (
-                                    <span>
-                                        {new Date(
-                                            email.created_at
-                                        ).toLocaleDateString()}
-                                    </span>
+                                    <div className="flex flex-col items-end">
+                                        <div>
+                                            {formatDistanceToNow(new Date(email.created_at))} ago
+                                        </div>
+                                        <div>
+                                            {new Date(
+                                                email.created_at
+                                            ).toDateString()}
+                                        </div>
+                                    </div>
+
                                 )}
                             </div>
                         </div>

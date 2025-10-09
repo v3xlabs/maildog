@@ -227,12 +227,12 @@ export const Sidebar = () => {
 
             <div className="p-1 border-t border-gray-200">
                 <Link
-                    to="/configure"
+                    to="/settings"
                     // onClick = {() => setShowAddForm(true)}
-                    className="w-full text-sm text-neutral-700 py-2 rounded-lg font-medium hover:bg-neutral-100 transition-colors flex items-center justify-start px-3 gap-2"
+                    className="w-full text-sm text-neutral-700 py-2 rounded-lg font-medium hover:bg-neutral-100 transition-colors flex items-center justify-start px-3 gap-2 group"
                 >
                     <LuCog className="w-4 h-4" />
-                    Configure
+                    <span className="opacity-10 group-hover:opacity-100 transition-opacity">Settings</span>
                 </Link>
             </div>
         </aside>
