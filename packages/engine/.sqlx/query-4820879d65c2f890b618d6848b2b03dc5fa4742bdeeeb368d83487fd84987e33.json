@@ -1,0 +1,56 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT from_address, to_address, subject, cc_address, bcc_address, reply_to, message_id\n         FROM emails WHERE imap_uid = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "from_address",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "to_address",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "subject",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "cc_address",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "bcc_address",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "reply_to",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "message_id",
+        "ordinal": 6,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "4820879d65c2f890b618d6848b2b03dc5fa4742bdeeeb368d83487fd84987e33"
+}

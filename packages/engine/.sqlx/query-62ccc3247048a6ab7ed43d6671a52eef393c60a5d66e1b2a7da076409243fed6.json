@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT rule_json FROM email_rules WHERE enabled = TRUE ORDER BY priority DESC, created_at ASC",
+  "describe": {
+    "columns": [
+      {
+        "name": "rule_json",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "62ccc3247048a6ab7ed43d6671a52eef393c60a5d66e1b2a7da076409243fed6"
+}

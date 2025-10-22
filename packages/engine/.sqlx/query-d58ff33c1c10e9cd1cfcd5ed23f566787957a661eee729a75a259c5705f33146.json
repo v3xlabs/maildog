@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE email_rules \n         SET name = ?, rule_json = ?, priority = ?, enabled = ?, updated_at = ?\n         WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "d58ff33c1c10e9cd1cfcd5ed23f566787957a661eee729a75a259c5705f33146"
+}

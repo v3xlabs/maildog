@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT rule_json FROM email_rules WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "rule_json",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d62b79eb47bbb8a854524bca99d77d21ef0494dcaf0146125939f4bdae1ed0c0"
+}
