@@ -238,10 +238,172 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all email rules */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["RuleListResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a new email rule */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["CreateRuleRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["MessageResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update an existing email rule */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UpdateRuleRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["MessageResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Delete an email rule */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["MessageResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/emails/{uid}/categorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manually categorize a specific email by IMAP UID */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    uid: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["CategorizeResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** CategorizeResponse */
+        CategorizeResponse: {
+            /** Format: uint64 */
+            actions_applied: number;
+        };
         /**
          * CreateImapConfigRequest
          * @description Request to create a new IMAP configuration
@@ -255,6 +417,15 @@ export interface components {
             password: string;
             /** @default true */
             use_tls: boolean;
+        };
+        /** CreateRuleRequest */
+        CreateRuleRequest: {
+            name: string;
+            condition: unknown;
+            actions: unknown[];
+            /** Format: int32 */
+            priority: number;
+            enabled: boolean;
         };
         /** EmailDetailResponse */
         EmailDetailResponse: {
@@ -273,6 +444,10 @@ export interface components {
             created_at: string;
             /** Format: int64 */
             imap_config_id: number;
+            category?: string;
+            labels: string[];
+            /** Format: int64 */
+            priority?: number;
         };
         /**
          * EmailResponse
@@ -302,6 +477,10 @@ export interface components {
             updated_at: string;
             /** Format: int64 */
             imap_config_id: number;
+            category?: string;
+            labels: string[];
+            /** Format: int64 */
+            priority?: number;
         };
         /** EmailsListResponse */
         EmailsListResponse: {
@@ -348,6 +527,26 @@ export interface components {
             created_at: string;
             updated_at: string;
         };
+        /** MessageResponse */
+        MessageResponse: {
+            message: string;
+        };
+        /** RuleListResponse */
+        RuleListResponse: {
+            rules: components["schemas"]["RuleResponse"][];
+            /** Format: uint64 */
+            total: number;
+        };
+        /** RuleResponse */
+        RuleResponse: {
+            id: string;
+            name: string;
+            condition: unknown;
+            actions: unknown[];
+            /** Format: int32 */
+            priority: number;
+            enabled: boolean;
+        };
         /**
          * SuccessResponse
          * @description Success message response
@@ -367,6 +566,15 @@ export interface components {
             username?: string;
             password?: string;
             use_tls?: boolean;
+        };
+        /** UpdateRuleRequest */
+        UpdateRuleRequest: {
+            name: string;
+            condition: unknown;
+            actions: unknown[];
+            /** Format: int32 */
+            priority: number;
+            enabled: boolean;
         };
     };
     responses: never;

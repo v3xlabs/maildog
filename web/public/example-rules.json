@@ -1,0 +1,443 @@
+[
+  {
+    "id": "work-emails",
+    "name": "Work Emails from Company Domain",
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "@v3x.email"
+        },
+        {
+          "type": "not",
+          "condition": {
+            "type": "headerContains",
+            "name": "subject",
+            "substring": "out of office"
+          }
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "setCategory",
+        "value": "work"
+      },
+      {
+        "type": "setPriority",
+        "value": 7
+      }
+    ],
+    "priority": 10,
+    "enabled": true
+  },
+  {
+    "id": "urgent-emails",
+    "name": "Urgent Priority Emails",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerMatches",
+          "name": "subject",
+          "pattern": "(?i)\\[URGENT\\]|\\[IMPORTANT\\]|\\[ACTION REQUIRED\\]"
+        },
+        {
+          "type": "headerEquals",
+          "name": "x-priority",
+          "value": "1"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "setCategory",
+        "value": "urgent"
+      },
+      {
+        "type": "addLabel",
+        "value": "needs-attention"
+      },
+      {
+        "type": "setPriority",
+        "value": 10
+      }
+    ],
+    "priority": 100,
+    "enabled": true
+  },
+  {
+    "id": "newsletters",
+    "name": "Newsletter Categorization",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "newsletter"
+        },
+        {
+          "type": "headerContains",
+          "name": "list-unsubscribe",
+          "substring": "unsubscribe"
+        },
+        {
+          "type": "headerMatches",
+          "name": "from",
+          "pattern": ".*@(news|newsletter|updates)\\."
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "setCategory",
+        "value": "newsletters"
+      },
+      {
+        "type": "addLabel",
+        "value": "read-later"
+      },
+      {
+        "type": "setPriority",
+        "value": 2
+      }
+    ],
+    "priority": 5,
+    "enabled": true
+  },
+  {
+    "id": "github-notifications",
+    "name": "GitHub Notifications",
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "@github.com"
+        },
+        {
+          "type": "or",
+          "conditions": [
+            {
+              "type": "headerContains",
+              "name": "subject",
+              "substring": "mentioned you"
+            },
+            {
+              "type": "headerContains",
+              "name": "subject",
+              "substring": "assigned you"
+            },
+            {
+              "type": "headerContains",
+              "name": "subject",
+              "substring": "requested your review"
+            }
+          ]
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "setCategory",
+        "value": "development"
+      },
+      {
+        "type": "addLabel",
+        "value": "github"
+      },
+      {
+        "type": "addLabel",
+        "value": "action-required"
+      },
+      {
+        "type": "setPriority",
+        "value": 8
+      }
+    ],
+    "priority": 15,
+    "enabled": true
+  },
+  {
+    "id": "automated-emails",
+    "name": "Automated System Emails",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "noreply@"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "no-reply@"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "donotreply@"
+        },
+        {
+          "type": "headerEquals",
+          "name": "auto-submitted",
+          "value": "auto-generated"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "setCategory",
+        "value": "automated"
+      },
+      {
+        "type": "addLabel",
+        "value": "no-reply"
+      },
+      {
+        "type": "setPriority",
+        "value": 3
+      }
+    ],
+    "priority": 3,
+    "enabled": true
+  },
+  {
+    "id": "receipts-invoices",
+    "name": "Receipts and Invoices",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerMatches",
+          "name": "subject",
+          "pattern": "(?i)receipt|invoice|payment|order\\s+confirmation"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "billing@"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "payments@"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "setCategory",
+        "value": "financial"
+      },
+      {
+        "type": "addLabel",
+        "value": "receipts"
+      },
+      {
+        "type": "setPriority",
+        "value": 6
+      }
+    ],
+    "priority": 8,
+    "enabled": true
+  },
+  {
+    "id": "security-alerts",
+    "name": "Security Alerts",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerMatches",
+          "name": "subject",
+          "pattern": "(?i)security|suspicious|login|password|verification|2fa|two.factor"
+        },
+        {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "headerContains",
+              "name": "from",
+              "substring": "security@"
+            },
+            {
+              "type": "not",
+              "condition": {
+                "type": "headerContains",
+                "name": "subject",
+                "substring": "newsletter"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "setCategory",
+        "value": "security"
+      },
+      {
+        "type": "addLabel",
+        "value": "important"
+      },
+      {
+        "type": "setPriority",
+        "value": 9
+      }
+    ],
+    "priority": 50,
+    "enabled": true
+  },
+  {
+    "id": "social-media",
+    "name": "Social Media Notifications",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerMatches",
+          "name": "from",
+          "pattern": ".*(facebook|twitter|linkedin|instagram|reddit).*"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "liked your post"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "commented on"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "followed you"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "setCategory",
+        "value": "social"
+      }
+    ],
+    "priority": 1,
+    "enabled": true
+  },
+  {
+    "id": "personal-vip",
+    "name": "VIP Personal Contacts",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerMatches",
+          "name": "from",
+          "pattern": "(?i)(jonte|luc)@.*"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "family@"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "setCategory",
+        "value": "personal"
+      },
+      {
+        "type": "addLabel",
+        "value": "vip"
+      },
+      {
+        "type": "setPriority",
+        "value": 9
+      }
+    ],
+    "priority": 20,
+    "enabled": true
+  },
+  {
+    "id": "spam-likely",
+    "name": "Likely Spam",
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "or",
+          "conditions": [
+            {
+              "type": "headerMatches",
+              "name": "subject",
+              "pattern": "(?i)(lottery|winner|claim.*prize|act\\s+now|limited\\s+time)"
+            },
+            {
+              "type": "headerContains",
+              "name": "subject",
+              "substring": "RE: RE: RE: RE:"
+            }
+          ]
+        },
+        {
+          "type": "not",
+          "condition": {
+            "type": "headerContains",
+            "name": "from",
+            "substring": "@v3x.email"
+          }
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "setCategory",
+        "value": "spam"
+      },
+      {
+        "type": "addLabel",
+        "value": "review"
+      },
+      {
+        "type": "setPriority",
+        "value": 0
+      }
+    ],
+    "priority": 1,
+    "enabled": true
+  },
+  {
+    "id": "otp-codes" ,
+    "name": "One-Time Password Emails",
+    "condition": {
+      "type": "headerMatches",
+      "name": "subject",
+      "pattern": "(?i)(one[- ]?time\\s+password|otp|verification\\s+code|security\\s+code)"
+    },
+    "actions": [
+      {
+        "type": "setCategory",
+        "value": "security"
+      },
+      {
+        "type": "addLabel",
+        "value": "otp"
+      },
+      {
+        "type": "setPriority",
+        "value": 10
+      }
+    ],
+    "priority": 30,
+    "enabled": true
+  }
+]

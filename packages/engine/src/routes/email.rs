@@ -1,7 +1,6 @@
 use poem::web::Data;
 use poem_openapi::{param::Path, param::Query, payload::Json, Object, OpenApi};
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 use std::sync::Arc;
 use time::OffsetDateTime;
 
@@ -12,7 +11,7 @@ use crate::state::AppState;
 pub struct EmailApi;
 
 /// Simplified email for list view
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize, Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, Object)]
 pub struct EmailListItem {
     pub imap_uid: i64,
     pub subject: Option<String>,
@@ -20,6 +19,9 @@ pub struct EmailListItem {
     pub to_address: Option<String>,
     pub created_at: String,
     pub imap_config_id: i64,
+    pub category: Option<String>,
+    pub labels: Vec<String>,
+    pub priority: Option<i64>,
 }
 
 /// API-friendly email representation with RFC3339 datetime strings
@@ -45,10 +47,20 @@ pub struct EmailResponse {
     pub created_at: String,
     pub updated_at: String,
     pub imap_config_id: i64,
+    pub category: Option<String>,
+    pub labels: Vec<String>,
+    pub priority: Option<i64>,
 }
 
 impl From<Email> for EmailResponse {
     fn from(email: Email) -> Self {
+        // Parse labels from JSON string to Vec<String>
+        let labels = email
+            .labels
+            .as_ref()
+            .and_then(|json_str| serde_json::from_str::<Vec<String>>(json_str).ok())
+            .unwrap_or_default();
+
         Self {
             imap_uid: email.imap_uid,
             message_id: email.message_id,
@@ -84,6 +96,9 @@ impl From<Email> for EmailResponse {
                 .format(&time::format_description::well_known::Rfc3339)
                 .unwrap_or_else(|_| email.updated_at.to_string()),
             imap_config_id: email.imap_config_id,
+            category: email.category,
+            labels,
+            priority: email.priority,
         }
     }
 }
@@ -135,7 +150,8 @@ impl EmailApi {
             SELECT 
                 imap_uid, subject, from_address, to_address, 
                 date_sent as "date_sent: OffsetDateTime", 
-                imap_config_id as "imap_config_id!"
+                imap_config_id as "imap_config_id!",
+                category, labels, priority
             FROM emails
             WHERE imap_config_id = ?
             ORDER BY COALESCE(date_sent, date_maildog_fetched) DESC
@@ -157,19 +173,31 @@ impl EmailApi {
 
         let email_list: Vec<EmailListItem> = emails
             .into_iter()
-            .map(|row| EmailListItem {
-                imap_uid: row.imap_uid,
-                subject: row.subject,
-                from_address: row.from_address,
-                to_address: row.to_address,
-                created_at: row
-                    .date_sent
-                    .map(|dt| {
-                        dt.format(&time::format_description::well_known::Rfc3339)
-                            .unwrap_or_else(|_| dt.to_string())
-                    })
-                    .unwrap_or_default(),
-                imap_config_id: row.imap_config_id,
+            .map(|row| {
+                // Parse labels from JSON string to Vec<String>
+                let labels = row
+                    .labels
+                    .as_ref()
+                    .and_then(|json_str| serde_json::from_str::<Vec<String>>(json_str).ok())
+                    .unwrap_or_default();
+
+                EmailListItem {
+                    imap_uid: row.imap_uid,
+                    subject: row.subject,
+                    from_address: row.from_address,
+                    to_address: row.to_address,
+                    created_at: row
+                        .date_sent
+                        .map(|dt| {
+                            dt.format(&time::format_description::well_known::Rfc3339)
+                                .unwrap_or_else(|_| dt.to_string())
+                        })
+                        .unwrap_or_default(),
+                    imap_config_id: row.imap_config_id,
+                    category: row.category,
+                    labels,
+                    priority: row.priority,
+                }
             })
             .collect();
 
@@ -200,7 +228,8 @@ impl EmailApi {
             SELECT 
                 id, imap_uid, message_id, subject, from_address, to_address, cc_address, bcc_address,
                 reply_to, date_sent, date_maildog_fetched, body_text, body_html, raw_message,
-                flags, size_bytes, has_attachments, folder_name, created_at, updated_at, imap_config_id
+                flags, size_bytes, has_attachments, folder_name, created_at, updated_at, imap_config_id,
+                category, labels, priority
             FROM emails
             WHERE imap_uid = ? AND imap_config_id = ?
             "#

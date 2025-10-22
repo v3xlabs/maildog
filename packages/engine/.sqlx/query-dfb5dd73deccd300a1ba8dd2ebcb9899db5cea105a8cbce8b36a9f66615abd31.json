@@ -1,0 +1,68 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT \n                imap_uid, subject, from_address, to_address, \n                date_sent as \"date_sent: OffsetDateTime\", \n                imap_config_id as \"imap_config_id!\",\n                category, labels, priority\n            FROM emails\n            WHERE imap_config_id = ?\n            ORDER BY COALESCE(date_sent, date_maildog_fetched) DESC\n            LIMIT ? OFFSET ?\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "imap_uid",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "subject",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "from_address",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "to_address",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "date_sent: OffsetDateTime",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "imap_config_id!",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "category",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "labels",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "priority",
+        "ordinal": 8,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "dfb5dd73deccd300a1ba8dd2ebcb9899db5cea105a8cbce8b36a9f66615abd31"
+}

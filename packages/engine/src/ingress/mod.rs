@@ -194,11 +194,27 @@ impl MailIngress {
 
                         // Batch insert all emails from this batch
                         if !batch_emails.is_empty() {
+                            let inserted_uids: Vec<i64> = batch_emails.iter().map(|e| e.imap_uid).collect();
+                            
                             match Email::insert_batch(&self.pool, batch_emails).await {
                                 Ok(count) => {
                                     emails_processed += count as i64;
                                     emails_new += count as i64;
                                     info!("Inserted {} new emails from batch", count);
+                                    
+                                                                         // Auto-categorize batch inserted emails
+                                     let pool_clone = self.pool.clone();
+                                     tokio::spawn(async move {
+                                         let mut categorized = 0;
+                                         for uid in &inserted_uids {
+                                             if crate::rules::apply::categorize_email(&pool_clone, *uid).await.is_ok() {
+                                                 categorized += 1;
+                                             }
+                                         }
+                                         if categorized > 0 {
+                                             info!("Auto-categorized {} emails from batch", categorized);
+                                         }
+                                     });
                                 }
                                 Err(e) => {
                                     error!("Failed to batch insert emails: {}", e);
@@ -397,12 +413,10 @@ impl MailIngress {
             return Ok(false); // Not new
         }
 
-        let envelope = fetch.envelope();
         let body = fetch.body().context("No body found")?;
         let flags = fetch.flags();
-        let internal_date = fetch.internal_date();
 
-        let (subject, from_address, to_address, message_id, date_sent) = if let Some(env) = envelope
+        let (subject, from_address, to_address, message_id, date_sent) = if let Some(env) = fetch.envelope()
         {
             let subject = env
                 .subject
@@ -526,8 +540,14 @@ impl MailIngress {
             imap_config_id: self.imap_config_id,
         };
 
-        let _email = Email::insert(&self.pool, new_email).await?;
-
-        Ok(true) // New email
+         let email = Email::insert(&self.pool, new_email).await?;
+ 
+         let pool_clone = self.pool.clone();
+         tokio::spawn(async move {
+             if let Err(e) = crate::rules::apply::categorize_email(&pool_clone, email.imap_uid).await {
+                 warn!("Failed to auto-categorize email UID {}: {}", email.imap_uid, e);
+             }
+         });        
+         Ok(true) // New email
     }
 }

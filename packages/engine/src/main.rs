@@ -6,7 +6,7 @@ use poem::{
     get, handler, listener::TcpListener, middleware::Cors, web::Html, EndpointExt, Route, Server,
 };
 use poem_openapi::{OpenApi, OpenApiService};
-use routes::{EmailApi, HealthApi, ImapConfigApi};
+use routes::{EmailApi, HealthApi, ImapConfigApi, RuleApi};
 use state::AppState;
 use tracing::{error, info};
 use tracing_subscriber::{
@@ -24,11 +24,12 @@ pub mod error;
 pub mod ingress;
 pub mod keyring;
 pub mod routes;
+pub mod rules;
 pub mod state;
 pub mod store;
 
 fn get_api() -> impl OpenApi {
-    (HealthApi, EmailApi, ImapConfigApi)
+    (HealthApi, EmailApi, ImapConfigApi, RuleApi)
 }
 
 #[handler]
@@ -92,7 +93,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let api_service = OpenApiService::new(get_api(), "Maildog API", env!("CARGO_PKG_VERSION"))
-        .server("http://localhost:3000/api") // Use localhost instead of 127.0.0.1
+        .server("http://localhost:3000/api")
         .description("Maildog - Email ingestion and management service");
 
     let spec = api_service.spec_endpoint();
@@ -103,17 +104,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/openapi.json", spec)
         .nest("/api", api_service)
         .with(
-            Cors::new()
-                .allow_credentials(true)
-                .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
-                .allow_headers(vec![
-                    "Content-Type",
-                    "Authorization",
-                    "Accept",
-                    "Origin",
-                    "X-Requested-With",
-                ])
-                .allow_origin("http://localhost:5173"),
+            {
+                let mut cors = Cors::new()
+                    .allow_credentials(true)
+                    .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
+                    .allow_headers(vec![
+                        "Content-Type",
+                        "Authorization",
+                        "Accept",
+                        "Origin",
+                        "X-Requested-With",
+                    ]);
+
+                for origin in [
+                    "http://localhost:5173",
+                    "http://127.0.0.1:5173",
+                    "http://localhost:3000",
+                    "http://127.0.0.1:3000",
+                ] {
+                    cors = cors.allow_origin(origin);
+                }
+
+                cors
+            },
         )
         .data(app_state);
 

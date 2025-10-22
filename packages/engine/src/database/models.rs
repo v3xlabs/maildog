@@ -29,6 +29,9 @@ pub struct Email {
     #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
     pub imap_config_id: i64,
+    pub category: Option<String>,
+    pub labels: Option<String>,
+    pub priority: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -178,7 +181,7 @@ impl Email {
                 id, imap_uid, message_id, subject, from_address, to_address, cc_address,
                 bcc_address, reply_to, date_sent, date_maildog_fetched, body_text, body_html,
                 raw_message, flags, size_bytes, has_attachments, folder_name, created_at,
-                updated_at, imap_config_id
+                updated_at, imap_config_id, category, labels, priority
             FROM emails WHERE imap_uid = ? AND imap_config_id = ?"#,
         )
         .bind(imap_uid)
@@ -210,7 +213,7 @@ impl Email {
                 id, imap_uid, message_id, subject, from_address, to_address, cc_address,
                 bcc_address, reply_to, date_sent, date_maildog_fetched, body_text, body_html,
                 raw_message, flags, size_bytes, has_attachments, folder_name, created_at,
-                updated_at, imap_config_id
+                updated_at, imap_config_id, category, labels, priority
             FROM emails ORDER BY date_maildog_fetched DESC LIMIT ?"#,
         )
         .bind(limit)
