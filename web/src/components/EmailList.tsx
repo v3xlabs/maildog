@@ -7,6 +7,23 @@ import { useEmails } from '@/api/emails';
 export const EmailList = (props: { configId: number }) => {
     const emails = useEmails(() => props.configId);
 
+    if (data.emails.length === 0) {
+        return (
+            <div className="p-8 text-center">
+                <div className="text-gray-500">
+                    {labels && labels.length > 0 ? (
+                        <>
+                            <p className="text-lg mb-2">No emails found with the selected label{labels.length > 1 ? 's' : ''}</p>
+                            <p className="text-sm">Labels: {labels.join(', ')}</p>
+                        </>
+                    ) : (
+                        <p className="text-lg">No emails found</p>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <Errored
             fallback={

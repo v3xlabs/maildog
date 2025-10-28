@@ -56,9 +56,6 @@ pub enum Condition {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(tag = "type", content = "value", rename_all = "camelCase")]
 pub enum Action {
-    /// Set the email category
-    SetCategory(String),
-    
     /// Add a label to the email
     AddLabel(String),
     
@@ -91,7 +88,7 @@ mod tests {
                 ],
             },
             actions: vec![
-                Action::SetCategory("work".to_string()),
+                Action::AddLabel("work".to_string()),
                 Action::SetPriority(5),
             ],
             priority: 10,
@@ -115,7 +112,7 @@ mod tests {
             },
             "actions": [
                 {
-                    "type": "setCategory",
+                    "type": "addLabel",
                     "value": "newsletters"
                 },
                 {

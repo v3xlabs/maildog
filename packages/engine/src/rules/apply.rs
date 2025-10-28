@@ -9,7 +9,6 @@ pub async fn apply_actions(
     imap_uid: i64,
     actions: Vec<Action>,
 ) -> Result<()> {
-    let mut category: Option<String> = None;
     let mut labels: HashSet<String> = HashSet::new();
     let mut priority: Option<u8> = None;
 
@@ -27,9 +26,6 @@ pub async fn apply_actions(
 
     for action in actions {
         match action {
-            Action::SetCategory(cat) => {
-                category = Some(cat);
-            }
             Action::AddLabel(label) => {
                 labels.insert(label);
             }
@@ -40,14 +36,6 @@ pub async fn apply_actions(
     }
 
     let mut tx = pool.begin().await?;
-
-    if let Some(cat) = category {
-        sqlx::query("UPDATE emails SET category = ?, updated_at = CURRENT_TIMESTAMP WHERE imap_uid = ?")
-            .bind(cat)
-            .bind(imap_uid)
-            .execute(&mut *tx)
-            .await?;
-    }
 
     if !labels.is_empty() {
         let labels_json = serde_json::to_string(&labels.into_iter().collect::<Vec<_>>())?;
@@ -113,7 +101,7 @@ pub async fn categorize_all_emails(
     only_uncategorized: bool,
 ) -> Result<CategorizeStats> {
     let query = if only_uncategorized {
-        "SELECT imap_uid FROM emails WHERE category IS NULL ORDER BY date_sent DESC"
+        "SELECT imap_uid FROM emails WHERE labels IS NULL OR labels = '[]' ORDER BY date_sent DESC"
     } else {
         "SELECT imap_uid FROM emails ORDER BY date_sent DESC"
     };
@@ -172,7 +160,6 @@ mod tests {
                 bcc_address TEXT,
                 reply_to TEXT,
                 message_id TEXT,
-                category TEXT,
                 labels TEXT,
                 priority INTEGER DEFAULT 5,
                 date_sent DATETIME,
@@ -196,7 +183,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_apply_category_action() {
+    async fn test_apply_label_action() {
         let pool = setup_test_db().await;
         
         sqlx::query("INSERT INTO emails (imap_uid, from_address, subject) VALUES (?, ?, ?)")
@@ -207,15 +194,16 @@ mod tests {
             .await
             .unwrap();
 
-        let actions = vec![Action::SetCategory("work".to_string())];
+        let actions = vec![Action::AddLabel("work".to_string())];
         apply_actions(&pool, 1, actions).await.unwrap();
 
-        let category: Option<String> = sqlx::query_scalar("SELECT category FROM emails WHERE imap_uid = 1")
+        let labels_json: Option<String> = sqlx::query_scalar("SELECT labels FROM emails WHERE imap_uid = 1")
             .fetch_one(&pool)
             .await
             .unwrap();
 
-        assert_eq!(category, Some("work".to_string()));
+        let labels: Vec<String> = serde_json::from_str(&labels_json.unwrap()).unwrap();
+        assert!(labels.contains(&"work".to_string()));
     }
 
     #[tokio::test]
@@ -281,23 +269,23 @@ mod tests {
             .unwrap();
 
         let actions = vec![
-            Action::SetCategory("important".to_string()),
+            Action::AddLabel("important".to_string()),
             Action::AddLabel("urgent".to_string()),
             Action::SetPriority(9),
         ];
         apply_actions(&pool, 1, actions).await.unwrap();
 
-        let row = sqlx::query!("SELECT category, labels, priority FROM emails WHERE imap_uid = 1")
+        let row = sqlx::query!("SELECT labels, priority FROM emails WHERE imap_uid = 1")
             .fetch_one(&pool)
             .await
             .unwrap();
 
-        assert_eq!(row.category, Some("important".to_string()));
         assert_eq!(row.priority, Some(9));
         
         let labels: Vec<String> = serde_json::from_str(&row.labels.unwrap()).unwrap();
-        assert_eq!(labels.len(), 1);
+        assert_eq!(labels.len(), 2);
         assert!(labels.contains(&"urgent".to_string()));
+        assert!(labels.contains(&"important".to_string()));
     }
 
     #[tokio::test]
@@ -330,7 +318,7 @@ mod tests {
                 ],
             },
             actions: vec![
-                Action::SetCategory("work".to_string()),
+                Action::AddLabel("work".to_string()),
                 Action::SetPriority(10),
             ],
             priority: 10,
@@ -344,12 +332,13 @@ mod tests {
         assert_eq!(actions.len(), 2);
 
         // Check that the email was updated
-        let row = sqlx::query!("SELECT category, priority FROM emails WHERE imap_uid = 1")
+        let row = sqlx::query!("SELECT labels, priority FROM emails WHERE imap_uid = 1")
             .fetch_one(&pool)
             .await
             .unwrap();
 
-        assert_eq!(row.category, Some("work".to_string()));
+        let labels: Vec<String> = serde_json::from_str(&row.labels.unwrap()).unwrap();
+        assert!(labels.contains(&"work".to_string()));
         assert_eq!(row.priority, Some(10));
     }
 }

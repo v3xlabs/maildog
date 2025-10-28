@@ -49,9 +49,10 @@ export interface paths {
         /** List all emails with pagination */
         get: {
             parameters: {
-                query: {
-                    imap_config_id: number;
+                query?: {
+                    imap_config_id?: number;
                     page?: number;
+                    labels?: string;
                 };
                 header?: never;
                 path?: never;
@@ -444,7 +445,6 @@ export interface components {
             created_at: string;
             /** Format: int64 */
             imap_config_id: number;
-            category?: string;
             labels: string[];
             /** Format: int64 */
             priority?: number;
@@ -477,7 +477,6 @@ export interface components {
             updated_at: string;
             /** Format: int64 */
             imap_config_id: number;
-            category?: string;
             labels: string[];
             /** Format: int64 */
             priority?: number;

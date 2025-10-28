@@ -2,7 +2,6 @@ use poem::web::Data;
 use poem_openapi::{param::Path, param::Query, payload::Json, Object, OpenApi};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use time::OffsetDateTime;
 
 use crate::database::models::Email;
 use crate::state::AppState;
@@ -19,7 +18,6 @@ pub struct EmailListItem {
     pub to_address: Option<String>,
     pub created_at: String,
     pub imap_config_id: i64,
-    pub category: Option<String>,
     pub labels: Vec<String>,
     pub priority: Option<i64>,
 }
@@ -47,7 +45,6 @@ pub struct EmailResponse {
     pub created_at: String,
     pub updated_at: String,
     pub imap_config_id: i64,
-    pub category: Option<String>,
     pub labels: Vec<String>,
     pub priority: Option<i64>,
 }
@@ -96,7 +93,6 @@ impl From<Email> for EmailResponse {
                 .format(&time::format_description::well_known::Rfc3339)
                 .unwrap_or_else(|_| email.updated_at.to_string()),
             imap_config_id: email.imap_config_id,
-            category: email.category,
             labels,
             priority: email.priority,
         }
@@ -123,80 +119,208 @@ impl EmailApi {
     async fn list_emails(
         &self,
         state: Data<&Arc<AppState>>,
-        imap_config_id: Query<i64>,
+        imap_config_id: Query<Option<i64>>,
         page: Query<Option<i64>>,
+        labels: Query<Option<String>>,
     ) -> poem::Result<Json<EmailsListResponse>> {
         let page = page.0.unwrap_or(1).max(1);
         let page_size = 50;
         let offset = (page - 1) * page_size;
 
-        let total = sqlx::query_scalar!(
-            "SELECT COUNT(*) as count FROM emails WHERE imap_config_id = ?",
-            imap_config_id.0
-        )
-        .fetch_one(&state.db_pool)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to count emails: {:?}", e);
-            poem::Error::from_string(
-                "Failed to fetch emails count",
-                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-            )
-        })?;
+        // Parse labels from comma-separated string
+        let filter_labels: Vec<String> = labels
+            .0
+            .as_ref()
+            .map(|s| {
+                s.split(',')
+                    .map(|label| label.trim().to_string())
+                    .filter(|label| !label.is_empty())
+                    .collect()
+            })
+            .unwrap_or_default();
 
-        // Query only the fields needed for the list view
-        let emails = sqlx::query!(
-            r#"
-            SELECT 
-                imap_uid, subject, from_address, to_address, 
-                date_sent as "date_sent: OffsetDateTime", 
-                imap_config_id as "imap_config_id!",
-                category, labels, priority
-            FROM emails
-            WHERE imap_config_id = ?
-            ORDER BY COALESCE(date_sent, date_maildog_fetched) DESC
-            LIMIT ? OFFSET ?
-            "#,
-            imap_config_id.0,
-            page_size,
-            offset
-        )
-        .fetch_all(&state.db_pool)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to fetch emails: {:?}", e);
-            poem::Error::from_string(
-                "Failed to fetch emails",
-                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-            )
-        })?;
+        // Build the WHERE clause based on imap_config_id and labels
+        let has_config_filter = imap_config_id.0.is_some();
+        let has_label_filter = !filter_labels.is_empty();
+
+        let (count_query, select_query) = match (has_config_filter, has_label_filter) {
+            (false, false) => {
+                // No filters - get all emails
+                (
+                    "SELECT COUNT(*) as count FROM emails".to_string(),
+                    r#"
+                    SELECT 
+                        imap_uid, subject, from_address, to_address, 
+                        date_sent, 
+                        imap_config_id,
+                        labels, priority
+                    FROM emails
+                    ORDER BY COALESCE(date_sent, date_maildog_fetched) DESC
+                    LIMIT ? OFFSET ?
+                    "#.to_string(),
+                )
+            }
+            (true, false) => {
+                // Only imap_config_id filter
+                (
+                    "SELECT COUNT(*) as count FROM emails WHERE imap_config_id = ?".to_string(),
+                    r#"
+                    SELECT 
+                        imap_uid, subject, from_address, to_address, 
+                        date_sent, 
+                        imap_config_id,
+                        labels, priority
+                    FROM emails
+                    WHERE imap_config_id = ?
+                    ORDER BY COALESCE(date_sent, date_maildog_fetched) DESC
+                    LIMIT ? OFFSET ?
+                    "#.to_string(),
+                )
+            }
+            (false, true) => {
+                // Only label filter
+                let label_conditions: Vec<String> = filter_labels
+                    .iter()
+                    .map(|_| "labels LIKE ?".to_string())
+                    .collect();
+                let label_where = label_conditions.join(" OR ");
+
+                (
+                    format!(
+                        "SELECT COUNT(*) as count FROM emails WHERE ({})",
+                        label_where
+                    ),
+                    format!(
+                        r#"
+                        SELECT 
+                            imap_uid, subject, from_address, to_address, 
+                            date_sent, 
+                            imap_config_id,
+                            labels, priority
+                        FROM emails
+                        WHERE ({})
+                        ORDER BY COALESCE(date_sent, date_maildog_fetched) DESC
+                        LIMIT ? OFFSET ?
+                        "#,
+                        label_where
+                    ),
+                )
+            }
+            (true, true) => {
+                // Both filters
+                let label_conditions: Vec<String> = filter_labels
+                    .iter()
+                    .map(|_| "labels LIKE ?".to_string())
+                    .collect();
+                let label_where = label_conditions.join(" OR ");
+
+                (
+                    format!(
+                        "SELECT COUNT(*) as count FROM emails WHERE imap_config_id = ? AND ({})",
+                        label_where
+                    ),
+                    format!(
+                        r#"
+                        SELECT 
+                            imap_uid, subject, from_address, to_address, 
+                            date_sent, 
+                            imap_config_id,
+                            labels, priority
+                        FROM emails
+                        WHERE imap_config_id = ? AND ({})
+                        ORDER BY COALESCE(date_sent, date_maildog_fetched) DESC
+                        LIMIT ? OFFSET ?
+                        "#,
+                        label_where
+                    ),
+                )
+            }
+        };
+
+        // Execute count query
+        let mut count_query_builder = sqlx::query_scalar::<_, i64>(&count_query);
+        
+        if let Some(config_id) = imap_config_id.0 {
+            count_query_builder = count_query_builder.bind(config_id);
+        }
+
+        for label in &filter_labels {
+            // Use JSON array search pattern for SQLite
+            // Match pattern like ["label"] or ["label","other"] or ["other","label"]
+            let pattern = format!("%\"{}\"%", label);
+            count_query_builder = count_query_builder.bind(pattern);
+        }
+
+        let total = count_query_builder
+            .fetch_one(&state.db_pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to count emails: {:?}", e);
+                poem::Error::from_string(
+                    "Failed to fetch emails count",
+                    poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+                )
+            })?;
+
+        // Execute select query
+        let mut select_query_builder = sqlx::query(&select_query);
+        
+        if let Some(config_id) = imap_config_id.0 {
+            select_query_builder = select_query_builder.bind(config_id);
+        }
+
+        for label in &filter_labels {
+            // Use JSON array search pattern for SQLite
+            // Match pattern like ["label"] or ["label","other"] or ["other","label"]
+            let pattern = format!("%\"{}\"%", label);
+            select_query_builder = select_query_builder.bind(pattern);
+        }
+
+        select_query_builder = select_query_builder.bind(page_size).bind(offset);
+
+        let emails = select_query_builder
+            .fetch_all(&state.db_pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to fetch emails: {:?}", e);
+                poem::Error::from_string(
+                    "Failed to fetch emails",
+                    poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+                )
+            })?;
 
         let email_list: Vec<EmailListItem> = emails
             .into_iter()
             .map(|row| {
+                use sqlx::Row;
+                
                 // Parse labels from JSON string to Vec<String>
-                let labels = row
-                    .labels
-                    .as_ref()
-                    .and_then(|json_str| serde_json::from_str::<Vec<String>>(json_str).ok())
+                let labels: Vec<String> = row
+                    .try_get::<Option<String>, _>("labels")
+                    .ok()
+                    .flatten()
+                    .and_then(|json_str| serde_json::from_str::<Vec<String>>(&json_str).ok())
                     .unwrap_or_default();
 
+                let date_sent = row
+                    .try_get::<Option<time::OffsetDateTime>, _>("date_sent")
+                    .ok()
+                    .flatten();
+
                 EmailListItem {
-                    imap_uid: row.imap_uid,
-                    subject: row.subject,
-                    from_address: row.from_address,
-                    to_address: row.to_address,
-                    created_at: row
-                        .date_sent
+                    imap_uid: row.try_get("imap_uid").unwrap_or(0),
+                    subject: row.try_get("subject").ok().flatten(),
+                    from_address: row.try_get("from_address").ok().flatten(),
+                    to_address: row.try_get("to_address").ok().flatten(),
+                    created_at: date_sent
                         .map(|dt| {
                             dt.format(&time::format_description::well_known::Rfc3339)
                                 .unwrap_or_else(|_| dt.to_string())
                         })
                         .unwrap_or_default(),
-                    imap_config_id: row.imap_config_id,
-                    category: row.category,
+                    imap_config_id: row.try_get("imap_config_id").unwrap_or(0),
                     labels,
-                    priority: row.priority,
+                    priority: row.try_get("priority").ok().flatten(),
                 }
             })
             .collect();
@@ -229,7 +353,7 @@ impl EmailApi {
                 id, imap_uid, message_id, subject, from_address, to_address, cc_address, bcc_address,
                 reply_to, date_sent, date_maildog_fetched, body_text, body_html, raw_message,
                 flags, size_bytes, has_attachments, folder_name, created_at, updated_at, imap_config_id,
-                category, labels, priority
+                labels, priority
             FROM emails
             WHERE imap_uid = ? AND imap_config_id = ?
             "#

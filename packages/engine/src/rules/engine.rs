@@ -169,7 +169,7 @@ mod tests {
                 name: "from".to_string(),
                 value: "alice@v3x.email".to_string(),
             },
-            actions: vec![Action::SetCategory("matched".to_string())],
+            actions: vec![Action::AddLabel("matched".to_string())],
             priority: 1,
             enabled: true,
         }]);
@@ -177,7 +177,7 @@ mod tests {
         let headers = create_test_headers();
         let actions = engine.evaluate(&headers);
         assert_eq!(actions.len(), 1);
-        assert_eq!(actions[0], Action::SetCategory("matched".to_string()));
+        assert_eq!(actions[0], Action::AddLabel("matched".to_string()));
     }
 
     #[test]
@@ -189,7 +189,7 @@ mod tests {
                 name: "FROM".to_string(), // uppercase header name
                 value: "ALICE@v3x.email".to_string(), // uppercase value
             },
-            actions: vec![Action::SetCategory("matched".to_string())],
+            actions: vec![Action::AddLabel("matched".to_string())],
             priority: 1,
             enabled: true,
         }]);
@@ -226,7 +226,7 @@ mod tests {
             name: "Test".to_string(),
             condition: Condition::HeaderMatches {
                 name: "from".to_string(),
-                pattern: r"^[\w\.-]+@example\.com$".to_string(),
+                pattern: r"^[\w\.-]+@v3x\.email$".to_string(),
             },
             actions: vec![Action::AddLabel("external".to_string())],
             priority: 1,
@@ -282,7 +282,7 @@ mod tests {
                     },
                 ],
             },
-            actions: vec![Action::SetCategory("important".to_string())],
+            actions: vec![Action::AddLabel("important".to_string())],
             priority: 1,
             enabled: true,
         }]);
@@ -303,7 +303,7 @@ mod tests {
                     substring: "spam".to_string(),
                 }),
             },
-            actions: vec![Action::SetCategory("clean".to_string())],
+            actions: vec![Action::AddLabel("clean".to_string())],
             priority: 1,
             enabled: true,
         }]);
@@ -340,7 +340,7 @@ mod tests {
                     },
                 ],
             },
-            actions: vec![Action::SetCategory("trusted".to_string())],
+            actions: vec![Action::AddLabel("trusted".to_string())],
             priority: 1,
             enabled: true,
         }]);
@@ -360,7 +360,7 @@ mod tests {
                     name: "from".to_string(),
                     substring: "v3x.email".to_string(),
                 },
-                actions: vec![Action::SetCategory("low".to_string())],
+                actions: vec![Action::AddLabel("low".to_string())],
                 priority: 1,
                 enabled: true,
             },
@@ -371,7 +371,7 @@ mod tests {
                     name: "from".to_string(),
                     substring: "v3x.email".to_string(),
                 },
-                actions: vec![Action::SetCategory("high".to_string())],
+                actions: vec![Action::AddLabel("high".to_string())],
                 priority: 10,
                 enabled: true,
             },
@@ -380,7 +380,7 @@ mod tests {
         let headers = create_test_headers();
         let actions = engine.evaluate(&headers);
         // Should match high priority rule first
-        assert_eq!(actions[0], Action::SetCategory("high".to_string()));
+        assert_eq!(actions[0], Action::AddLabel("high".to_string()));
     }
 
     #[test]
@@ -392,7 +392,7 @@ mod tests {
                 name: "from".to_string(),
                 substring: "v3x.email".to_string(),
             },
-            actions: vec![Action::SetCategory("matched".to_string())],
+            actions: vec![Action::AddLabel("matched".to_string())],
             priority: 1,
             enabled: false,
         }]);
@@ -411,7 +411,7 @@ mod tests {
                 name: "nonexistent".to_string(),
                 substring: "value".to_string(),
             },
-            actions: vec![Action::SetCategory("matched".to_string())],
+            actions: vec![Action::AddLabel("matched".to_string())],
             priority: 1,
             enabled: true,
         }]);
@@ -430,7 +430,7 @@ mod tests {
                 name: "from".to_string(),
                 pattern: "[invalid(".to_string(), // Invalid regex
             },
-            actions: vec![Action::SetCategory("matched".to_string())],
+            actions: vec![Action::AddLabel("matched".to_string())],
             priority: 1,
             enabled: true,
         }]);
@@ -448,9 +448,9 @@ mod tests {
             name: "Test".to_string(),
             condition: Condition::HeaderMatches {
                 name: "from".to_string(),
-                pattern: r".*@example\.com".to_string(),
+                pattern: r".*@v3x\.email".to_string(),
             },
-            actions: vec![Action::SetCategory("cached".to_string())],
+            actions: vec![Action::AddLabel("cached".to_string())],
             priority: 1,
             enabled: true,
         }]);
@@ -477,7 +477,7 @@ mod tests {
                 substring: "URGENT".to_string(),
             },
             actions: vec![
-                Action::SetCategory("urgent".to_string()),
+                Action::AddLabel("urgent".to_string()),
                 Action::AddLabel("important".to_string()),
                 Action::SetPriority(10),
             ],
@@ -501,7 +501,7 @@ mod tests {
                 name: "from".to_string(),
                 substring: "v3x.email".to_string(),
             },
-            actions: vec![Action::SetCategory("new".to_string())],
+            actions: vec![Action::AddLabel("new".to_string())],
             priority: 5,
             enabled: true,
         }).unwrap();
@@ -518,7 +518,7 @@ mod tests {
                 name: "from".to_string(),
                 substring: "v3x.email".to_string(),
             },
-            actions: vec![Action::SetCategory("removed".to_string())],
+            actions: vec![Action::AddLabel("removed".to_string())],
             priority: 1,
             enabled: true,
         }]);
@@ -536,7 +536,7 @@ mod tests {
                 name: "from".to_string(),
                 substring: "v3x.email".to_string(),
             },
-            actions: vec![Action::SetCategory("original".to_string())],
+            actions: vec![Action::AddLabel("original".to_string())],
             priority: 1,
             enabled: true,
         }]);
@@ -548,7 +548,7 @@ mod tests {
                 name: "from".to_string(),
                 substring: "v3x.email".to_string(),
             },
-            actions: vec![Action::SetCategory("updated".to_string())],
+            actions: vec![Action::AddLabel("updated".to_string())],
             priority: 10,
             enabled: true,
         }).unwrap();

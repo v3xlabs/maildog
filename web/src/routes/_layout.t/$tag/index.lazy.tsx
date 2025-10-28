@@ -1,5 +1,7 @@
 import { createLazyFileRoute } from '@tanstack/solid-router';
 
+import { EmailList } from '@/components/EmailList';
+
 export const Route = createLazyFileRoute('/_layout/t/$tag/')({
     component: RouteComponent,
 });

@@ -1,0 +1,269 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://inbox.page/rules-schema.json",
+  "title": "Maildog Email Rule",
+  "description": "Schema for defining a single email processing rule in Maildog",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "condition",
+    "actions",
+    "priority",
+    "enabled"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the rule",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name for the rule",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "condition": {
+      "$ref": "#/definitions/Condition",
+      "description": "The condition that must be met for this rule to apply"
+    },
+    "actions": {
+      "type": "array",
+      "description": "Actions to perform when the condition is met",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/Action"
+      }
+    },
+    "priority": {
+      "type": "integer",
+      "description": "Priority of the rule (higher values = higher priority)",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether the rule is currently active"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Condition": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/AndCondition"
+        },
+        {
+          "$ref": "#/definitions/OrCondition"
+        },
+        {
+          "$ref": "#/definitions/NotCondition"
+        },
+        {
+          "$ref": "#/definitions/HeaderContainsCondition"
+        },
+        {
+          "$ref": "#/definitions/HeaderEqualsCondition"
+        },
+        {
+          "$ref": "#/definitions/HeaderMatchesCondition"
+        }
+      ]
+    },
+    "AndCondition": {
+      "type": "object",
+      "description": "Logical AND of multiple conditions",
+      "required": [
+        "type",
+        "conditions"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "and"
+        },
+        "conditions": {
+          "type": "array",
+          "description": "All conditions must be true",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/definitions/Condition"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "OrCondition": {
+      "type": "object",
+      "description": "Logical OR of multiple conditions",
+      "required": [
+        "type",
+        "conditions"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "or"
+        },
+        "conditions": {
+          "type": "array",
+          "description": "Any condition must be true",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/definitions/Condition"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "NotCondition": {
+      "type": "object",
+      "description": "Logical NOT of a condition",
+      "required": [
+        "type",
+        "condition"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "not"
+        },
+        "condition": {
+          "$ref": "#/definitions/Condition",
+          "description": "The condition to negate"
+        }
+      },
+      "additionalProperties": false
+    },
+    "HeaderContainsCondition": {
+      "type": "object",
+      "description": "Check if a header contains a substring",
+      "required": [
+        "type",
+        "name",
+        "substring"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "headerContains"
+        },
+        "name": {
+          "type": "string",
+          "description": "The header name to check (case-insensitive)",
+          "minLength": 1
+        },
+        "substring": {
+          "type": "string",
+          "description": "The substring to search for",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "HeaderEqualsCondition": {
+      "type": "object",
+      "description": "Check if a header equals a specific value",
+      "required": [
+        "type",
+        "name",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "headerEquals"
+        },
+        "name": {
+          "type": "string",
+          "description": "The header name to check (case-insensitive)",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string",
+          "description": "The exact value to match"
+        }
+      },
+      "additionalProperties": false
+    },
+    "HeaderMatchesCondition": {
+      "type": "object",
+      "description": "Check if a header matches a regular expression",
+      "required": [
+        "type",
+        "name",
+        "pattern"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "headerMatches"
+        },
+        "name": {
+          "type": "string",
+          "description": "The header name to check (case-insensitive)",
+          "minLength": 1
+        },
+        "pattern": {
+          "type": "string",
+          "description": "Regular expression pattern to match against",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "Action": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/AddLabelAction"
+        },
+        {
+          "$ref": "#/definitions/SetPriorityAction"
+        }
+      ]
+    },
+    "AddLabelAction": {
+      "type": "object",
+      "description": "Add a label to the email",
+      "required": [
+        "type",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "addLabel"
+        },
+        "value": {
+          "type": "string",
+          "description": "The label to add",
+          "minLength": 1,
+          "maxLength": 100
+        }
+      },
+      "additionalProperties": false
+    },
+    "SetPriorityAction": {
+      "type": "object",
+      "description": "Set the priority level of the email",
+      "required": [
+        "type",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "setPriority"
+        },
+        "value": {
+          "type": "integer",
+          "description": "Priority level (0-10, higher = more important)",
+          "minimum": 0,
+          "maximum": 10
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

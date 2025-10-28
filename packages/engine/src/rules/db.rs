@@ -144,7 +144,7 @@ mod tests {
                 name: "from".to_string(),
                 substring: "test@v3x.email".to_string(),
             },
-            actions: vec![Action::SetCategory("test".to_string())],
+            actions: vec![Action::AddLabel("test".to_string())],
             priority: 5,
             enabled: true,
         }

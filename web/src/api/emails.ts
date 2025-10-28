@@ -56,7 +56,7 @@ export const useEmail = (
     imapUid: Accessor<number>
 ) => useQuery(() => getEmail(imapConfigId(), imapUid()));
 
-export const getEmailsInfinite = (imapConfigId: number) =>
+export const getEmailsInfinite = (labels?: string[], imapConfigId?: number) =>
     infiniteQueryOptions({
         queryKey: ['emails', imapConfigId, 'infinite'],
         queryFn: ({ pageParam }) => fetchEmails(imapConfigId, pageParam),
