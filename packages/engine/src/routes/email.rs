@@ -112,6 +112,16 @@ pub struct EmailDetailResponse {
     pub email: EmailResponse,
 }
 
+/// Response for email reindexing operation
+#[derive(Debug, Serialize, Deserialize, Object)]
+pub struct ReindexResponse {
+    pub message: String,
+    pub total_emails: i64,
+    pub processed_emails: i64,
+    pub failed_emails: i64,
+    pub cleared_emails: i64,
+}
+
 #[OpenApi]
 impl EmailApi {
     /// List all emails with pagination
@@ -375,6 +385,96 @@ impl EmailApi {
 
         Ok(Json(EmailDetailResponse {
             email: email.into(),
+        }))
+    }
+
+    /// Reindex all emails by reapplying rules and categories
+    #[oai(
+        path = "/emails/reindex",
+        method = "post",
+        tag = "super::ApiTags::Email"
+    )]
+    async fn reindex_emails(
+        &self,
+        state: Data<&Arc<AppState>>,
+        /// Optional IMAP config ID to reindex only specific account emails
+        imap_config_id: Query<Option<i64>>,
+    ) -> poem::Result<Json<ReindexResponse>> {
+        use crate::rules::apply::categorize_email;
+
+        // Clear existing categories, labels, and reset priority for emails to be reindexed
+        let clear_query = if let Some(config_id) = imap_config_id.0 {
+            sqlx::query(
+                "UPDATE emails SET category = NULL, labels = NULL, priority = 5 WHERE imap_config_id = ?"
+            )
+            .bind(config_id)
+        } else {
+            sqlx::query("UPDATE emails SET category = NULL, labels = NULL, priority = 5")
+        };
+
+        let cleared_count = clear_query
+            .execute(&state.db_pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to clear email categories: {:?}", e);
+                poem::Error::from_string(
+                    "Failed to clear email categories",
+                    poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+                )
+            })?
+            .rows_affected();
+
+        // Get all email UIDs to reprocess
+        let email_uids_query = if let Some(config_id) = imap_config_id.0 {
+            sqlx::query_scalar::<_, i64>("SELECT imap_uid FROM emails WHERE imap_config_id = ?")
+                .bind(config_id)
+        } else {
+            sqlx::query_scalar::<_, i64>("SELECT imap_uid FROM emails")
+        };
+
+        let email_uids: Vec<i64> = email_uids_query
+            .fetch_all(&state.db_pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to fetch email UIDs: {:?}", e);
+                poem::Error::from_string(
+                    "Failed to fetch email UIDs",
+                    poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+                )
+            })?;
+
+        let total_emails = email_uids.len();
+        let mut processed_count = 0;
+        let mut failed_count = 0;
+
+        // Process emails in batches to avoid overwhelming the system
+        let batch_size = 100;
+        for batch in email_uids.chunks(batch_size) {
+            for &email_uid in batch {
+                match categorize_email(&state.db_pool, email_uid).await {
+                    Ok(_) => processed_count += 1,
+                    Err(e) => {
+                        tracing::warn!("Failed to reindex email {}: {:?}", email_uid, e);
+                        failed_count += 1;
+                    }
+                }
+            }
+            
+            // Add a small delay between batches to prevent system overload
+            tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+        }
+
+        tracing::info!(
+            "Email reindexing completed: {} total, {} processed, {} failed, {} cleared",
+            total_emails, processed_count, failed_count, cleared_count
+        );
+
+        Ok(Json(ReindexResponse {
+            message: "Email reindexing completed".to_string(),
+            total_emails: total_emails as i64,
+            processed_emails: processed_count,
+            failed_emails: failed_count,
+            cleared_emails: cleared_count as i64,
         }))
     }
 }

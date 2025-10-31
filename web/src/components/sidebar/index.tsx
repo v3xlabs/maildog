@@ -16,6 +16,7 @@ import UserPlusIcon from '~icons/lucide/user-plus';
 import { Errored, For, Loading, Show } from 'solid-js';
 
 import { useImapConfigs } from '@/api/imapConfig';
+import { usePages, PageResponse } from '@/api/pages';
 
 import { SidebarLinkGroup } from './SidebarLinkGroup';
 import { createNavGroup, createNavItem } from './types';

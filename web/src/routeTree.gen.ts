@@ -25,9 +25,11 @@ import { Route as LayoutConfigureLayoutInstanceHealthcheckRouteImport } from './
 
 const DebugLazyRouteImport = createFileRoute('/debug')()
 const LayoutIndexLazyRouteImport = createFileRoute('/_layout/')()
+const PSlugIndexLazyRouteImport = createFileRoute('/p/$slug/')()
 const LoginLayoutCreateLazyRouteImport = createFileRoute(
   '/login/_layout/create',
 )()
+
 const LayoutMMailIndexLazyRouteImport = createFileRoute('/_layout/m/$mail/')()
 const LayoutMMailImap_uidLazyRouteImport = createFileRoute(
   '/_layout/m/$mail/$imap_uid',
@@ -141,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof LayoutSettingsIndexRoute
   '/login/': typeof LoginLayoutIndexRoute
   '/logout/': typeof LogoutLayoutIndexRoute
+  '/p/$slug': typeof PSlugIndexLazyRoute
   '/m/$mail/$imap_uid': typeof LayoutMMailImap_uidLazyRoute
   '/configure/': typeof LayoutConfigureLayoutIndexRoute
   '/m/$mail/': typeof LayoutMMailIndexLazyRoute
@@ -159,6 +162,7 @@ export interface FileRoutesByTo {
   '/m/$mail/$imap_uid': typeof LayoutMMailImap_uidLazyRoute
   '/configure': typeof LayoutConfigureLayoutIndexRoute
   '/m/$mail': typeof LayoutMMailIndexLazyRoute
+  '/p/$pageId': typeof LayoutPPageIdIndexLazyRoute
   '/t/$tag': typeof LayoutTTagIndexLazyRoute
   '/configure/instance/healthcheck': typeof LayoutConfigureLayoutInstanceHealthcheckRoute
   '/configure/instance': typeof LayoutConfigureLayoutInstanceIndexRoute
@@ -176,9 +180,11 @@ export interface FileRoutesById {
   '/_layout/settings/': typeof LayoutSettingsIndexRoute
   '/login/_layout/': typeof LoginLayoutIndexRoute
   '/logout/_layout/': typeof LogoutLayoutIndexRoute
+  '/p/$slug/': typeof PSlugIndexLazyRoute
   '/_layout/m/$mail/$imap_uid': typeof LayoutMMailImap_uidLazyRoute
   '/_layout/configure/_layout/': typeof LayoutConfigureLayoutIndexRoute
   '/_layout/m/$mail/': typeof LayoutMMailIndexLazyRoute
+  '/_layout/p/$pageId/': typeof LayoutPPageIdIndexLazyRoute
   '/_layout/t/$tag/': typeof LayoutTTagIndexLazyRoute
   '/_layout/configure/_layout/instance/healthcheck': typeof LayoutConfigureLayoutInstanceHealthcheckRoute
   '/_layout/configure/_layout/instance/': typeof LayoutConfigureLayoutInstanceIndexRoute
@@ -196,6 +202,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/login/'
     | '/logout/'
+    | '/p/$slug'
     | '/m/$mail/$imap_uid'
     | '/configure/'
     | '/m/$mail/'
@@ -214,6 +221,7 @@ export interface FileRouteTypes {
     | '/m/$mail/$imap_uid'
     | '/configure'
     | '/m/$mail'
+    | '/p/$pageId'
     | '/t/$tag'
     | '/configure/instance/healthcheck'
     | '/configure/instance'
@@ -230,9 +238,11 @@ export interface FileRouteTypes {
     | '/_layout/settings/'
     | '/login/_layout/'
     | '/logout/_layout/'
+    | '/p/$slug/'
     | '/_layout/m/$mail/$imap_uid'
     | '/_layout/configure/_layout/'
     | '/_layout/m/$mail/'
+    | '/_layout/p/$pageId/'
     | '/_layout/t/$tag/'
     | '/_layout/configure/_layout/instance/healthcheck'
     | '/_layout/configure/_layout/instance/'
@@ -394,6 +404,7 @@ interface LayoutRouteChildren {
   LayoutSettingsIndexRoute: typeof LayoutSettingsIndexRoute
   LayoutMMailImap_uidLazyRoute: typeof LayoutMMailImap_uidLazyRoute
   LayoutMMailIndexLazyRoute: typeof LayoutMMailIndexLazyRoute
+  LayoutPPageIdIndexLazyRoute: typeof LayoutPPageIdIndexLazyRoute
   LayoutTTagIndexLazyRoute: typeof LayoutTTagIndexLazyRoute
 }
 
@@ -403,6 +414,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutSettingsIndexRoute: LayoutSettingsIndexRoute,
   LayoutMMailImap_uidLazyRoute: LayoutMMailImap_uidLazyRoute,
   LayoutMMailIndexLazyRoute: LayoutMMailIndexLazyRoute,
+  LayoutPPageIdIndexLazyRoute: LayoutPPageIdIndexLazyRoute,
   LayoutTTagIndexLazyRoute: LayoutTTagIndexLazyRoute,
 }
 

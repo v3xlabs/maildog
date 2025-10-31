@@ -7,13 +7,13 @@ import { Component } from 'solid-js';
 
 import { FileRoutesByTo } from '@/routeTree.gen';
 
-export type NavItem<T extends keyof FileRoutesByTo = keyof FileRoutesByTo> = {
+export type NavItem<T extends ToPathOption<RegisteredRouter>> = {
     label: string;
     icon: Component<JSX.SvgSVGAttributes<SVGSVGElement>>;
     to: T;
     pathParams?: MakeOptionalPathParams<
         RegisteredRouter,
-        keyof FileRoutesByTo,
+        FileRoutesByTo,
         T
     >['params'];
 };
@@ -25,11 +25,11 @@ export type AnyNavItem = {
 
 export type NavGroup = {
     label: string;
-    items: AnyNavItem[];
+    items: (AnyNavItem | NavItem<string>)[];
 };
 
 // Helper function to create properly typed nav items
-export const createNavItem = <T extends keyof FileRoutesByTo>(
+export const createNavItem = <T extends ToPathOption<RegisteredRouter>>(
     item: NavItem<T>
 ): NavItem<T> => item;
 

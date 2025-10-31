@@ -85,6 +85,32 @@ pub struct ImapConfig {
     pub updated_at: OffsetDateTime,
 }
 
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct Page {
+    pub slug: String,
+    pub user_id: String,
+    pub name: String,
+    pub category: Option<String>, // Category for organizing pages
+    pub page_type: String,
+    pub config: String, // JSON blob
+    pub position: i64,
+    #[serde(with = "time::serde::rfc3339")]
+    pub created_at: OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339")]
+    pub updated_at: OffsetDateTime,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewPage {
+    pub slug: String,
+    pub user_id: String,
+    pub name: String,
+    pub category: Option<String>, // Category for organizing pages
+    pub page_type: String,
+    pub config: String,
+    pub position: i64,
+}
+
 impl Email {
     pub async fn insert(pool: &sqlx::SqlitePool, email: NewEmail) -> Result<Email, sqlx::Error> {
         sqlx::query!(
@@ -418,6 +444,114 @@ impl ImapConfig {
 
     pub async fn delete(pool: &sqlx::SqlitePool, id: i64) -> Result<(), sqlx::Error> {
         sqlx::query!("DELETE FROM imap_config WHERE id = ?", id)
+            .execute(pool)
+            .await?;
+
+        Ok(())
+    }
+}
+
+impl Page {
+    pub async fn get_all_for_user(
+        pool: &sqlx::SqlitePool,
+        user_id: &str,
+    ) -> Result<Vec<Page>, sqlx::Error> {
+        sqlx::query_as::<_, Page>(
+            r#"SELECT 
+                slug, user_id, name, category, page_type, config, position, created_at, updated_at
+            FROM pages WHERE user_id = ? ORDER BY position ASC"#,
+        )
+        .bind(user_id)
+        .fetch_all(pool)
+        .await
+    }
+
+    pub async fn get_by_slug_id(
+        pool: &sqlx::SqlitePool,
+        slug: &str,
+    ) -> Result<Option<Page>, sqlx::Error> {
+        sqlx::query_as::<_, Page>(
+            r#"SELECT 
+                slug, user_id, name, category, page_type, config, position, created_at, updated_at
+            FROM pages WHERE slug = ?"#,
+        )
+        .bind(slug)
+        .fetch_optional(pool)
+        .await
+    }
+
+    pub async fn insert(pool: &sqlx::SqlitePool, page: NewPage) -> Result<Page, sqlx::Error> {
+        sqlx::query!(
+            r#"
+            INSERT INTO pages (slug, user_id, name, category, page_type, config, position)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            "#,
+            page.slug,
+            page.user_id,
+            page.name,
+            page.category,
+            page.page_type,
+            page.config,
+            page.position
+        )
+        .execute(pool)
+        .await?;
+
+        Self::get_by_slug_id(pool, &page.slug)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)
+    }
+
+    pub async fn update(
+        pool: &sqlx::SqlitePool,
+        original_slug: &str,
+        name: String,
+        new_slug: String,
+        category: Option<String>,
+        page_type: String,
+        config: String,
+        position: i64,
+    ) -> Result<Page, sqlx::Error> {
+        sqlx::query!(
+            r#"
+            UPDATE pages 
+            SET name = ?, slug = ?, category = ?, page_type = ?, config = ?, position = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE slug = ?
+            "#,
+            name,
+            new_slug,
+            category,
+            page_type,
+            config,
+            position,
+            original_slug
+        )
+        .execute(pool)
+        .await?;
+
+        Self::get_by_slug_id(pool, &new_slug)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)
+    }
+
+    pub async fn get_by_slug(
+        pool: &sqlx::SqlitePool,
+        user_id: &str,
+        slug: &str,
+    ) -> Result<Option<Page>, sqlx::Error> {
+        sqlx::query_as::<_, Page>(
+            r#"SELECT 
+                slug, user_id, name, category, page_type, config, position, created_at, updated_at
+            FROM pages WHERE user_id = ? AND slug = ?"#,
+        )
+        .bind(user_id)
+        .bind(slug)
+        .fetch_optional(pool)
+        .await
+    }
+
+    pub async fn delete(pool: &sqlx::SqlitePool, slug: &str) -> Result<(), sqlx::Error> {
+        sqlx::query!("DELETE FROM pages WHERE slug = ?", slug)
             .execute(pool)
             .await?;
 

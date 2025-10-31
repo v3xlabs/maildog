@@ -6,7 +6,7 @@ use poem::{
     get, handler, listener::TcpListener, middleware::Cors, web::Html, EndpointExt, Route, Server,
 };
 use poem_openapi::{OpenApi, OpenApiService};
-use routes::{EmailApi, HealthApi, ImapConfigApi, RuleApi};
+use routes::{EmailApi, HealthApi, ImapConfigApi, PagesApi, RuleApi};
 use state::AppState;
 use tracing::{error, info};
 use tracing_subscriber::{
@@ -29,7 +29,7 @@ pub mod state;
 pub mod store;
 
 fn get_api() -> impl OpenApi {
-    (HealthApi, EmailApi, ImapConfigApi, RuleApi)
+    (HealthApi, EmailApi, ImapConfigApi, RuleApi, PagesApi)
 }
 
 #[handler]

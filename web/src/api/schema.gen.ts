@@ -396,6 +396,219 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pages/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all pages for a user */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    user_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["PageListResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pages/detail/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a single page by slug */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["PageResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pages/{user_id}/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a single page by slug */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    user_id: string;
+                    slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["PageResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a new page */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["CreatePageRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["PageResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pages/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update an existing page */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UpdatePageRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["PageResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Delete a page */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["PageMessageResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -418,6 +631,20 @@ export interface components {
             password: string;
             /** @default true */
             use_tls: boolean;
+        };
+        /**
+         * CreatePageRequest
+         * @description Request to create a new page
+         */
+        CreatePageRequest: {
+            user_id: string;
+            name: string;
+            slug: string;
+            category?: string;
+            page_type: string;
+            config: string;
+            /** Format: int64 */
+            position: number;
         };
         /** CreateRuleRequest */
         CreateRuleRequest: {
@@ -530,6 +757,36 @@ export interface components {
         MessageResponse: {
             message: string;
         };
+        /**
+         * PageListResponse
+         * @description Response containing a list of pages
+         */
+        PageListResponse: {
+            pages: components["schemas"]["PageResponse"][];
+        };
+        /**
+         * PageMessageResponse
+         * @description Response for successful page operations
+         */
+        PageMessageResponse: {
+            message: string;
+        };
+        /**
+         * PageResponse
+         * @description API-friendly Page representation
+         */
+        PageResponse: {
+            slug: string;
+            user_id: string;
+            name: string;
+            category?: string;
+            page_type: string;
+            config: string;
+            /** Format: int64 */
+            position: number;
+            created_at: string;
+            updated_at: string;
+        };
         /** RuleListResponse */
         RuleListResponse: {
             rules: components["schemas"]["RuleResponse"][];
@@ -565,6 +822,19 @@ export interface components {
             username?: string;
             password?: string;
             use_tls?: boolean;
+        };
+        /**
+         * UpdatePageRequest
+         * @description Request to update a page
+         */
+        UpdatePageRequest: {
+            name: string;
+            slug: string;
+            category?: string;
+            page_type: string;
+            config: string;
+            /** Format: int64 */
+            position: number;
         };
         /** UpdateRuleRequest */
         UpdateRuleRequest: {

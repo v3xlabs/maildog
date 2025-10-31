@@ -1,48 +1,19 @@
 [
   {
-    "id": "work-emails",
-    "name": "Work Emails from Company Domain",
-    "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "headerContains",
-          "name": "from",
-          "substring": "@v3x.email"
-        },
-        {
-          "type": "not",
-          "condition": {
-            "type": "headerContains",
-            "name": "subject",
-            "substring": "out of office"
-          }
-        }
-      ]
-    },
-    "actions": [
-      {
-        "type": "addLabel",
-        "value": "work"
-      },
-      {
-        "type": "setPriority",
-        "value": 7
-      }
-    ],
-    "priority": 10,
-    "enabled": true
-  },
-  {
-    "id": "urgent-emails",
-    "name": "Urgent Emails",
+    "id": "important-emails",
+    "name": "Mark Important Emails",
     "condition": {
       "type": "or",
       "conditions": [
         {
-          "type": "headerMatches",
+          "type": "headerContains",
           "name": "subject",
-          "pattern": "(?i)\\[URGENT\\]|\\[IMPORTANT\\]|\\[ACTION REQUIRED\\]"
+          "substring": "URGENT"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject", 
+          "substring": "IMPORTANT"
         },
         {
           "type": "headerEquals",
@@ -54,237 +25,6 @@
     "actions": [
       {
         "type": "addLabel",
-        "value": "urgent"
-      },
-      {
-        "type": "addLabel",
-        "value": "action-required"
-      },
-      {
-        "type": "setPriority",
-        "value": 10
-      }
-    ],
-    "priority": 100,
-    "enabled": true
-  },
-  {
-    "id": "newsletters",
-    "name": "Newsletter Categorization",
-    "condition": {
-      "type": "or",
-      "conditions": [
-        {
-          "type": "headerContains",
-          "name": "subject",
-          "substring": "newsletter"
-        },
-        {
-          "type": "headerContains",
-          "name": "list-unsubscribe",
-          "substring": "unsubscribe"
-        },
-        {
-          "type": "headerMatches",
-          "name": "from",
-          "pattern": ".*@(news|newsletter|updates)\\."
-        }
-      ]
-    },
-    "actions": [
-      {
-        "type": "addLabel",
-        "value": "newsletters"
-      },
-      {
-        "type": "addLabel",
-        "value": "marketing"
-      },
-      {
-        "type": "setPriority",
-        "value": 2
-      }
-    ],
-    "priority": 5,
-    "enabled": true
-  },
-  {
-    "id": "github-notifications",
-    "name": "GitHub Notifications",
-    "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "headerContains",
-          "name": "from",
-          "substring": "@github.com"
-        },
-        {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "headerContains",
-              "name": "subject",
-              "substring": "mentioned you"
-            },
-            {
-              "type": "headerContains",
-              "name": "subject",
-              "substring": "assigned you"
-            },
-            {
-              "type": "headerContains",
-              "name": "subject",
-              "substring": "requested your review"
-            }
-          ]
-        }
-      ]
-    },
-    "actions": [
-      {
-        "type": "addLabel",
-        "value": "development"
-      },
-      {
-        "type": "addLabel",
-        "value": "github"
-      },
-      {
-        "type": "addLabel",
-        "value": "action-required"
-      },
-      {
-        "type": "setPriority",
-        "value": 8
-      }
-    ],
-    "priority": 15,
-    "enabled": true
-  },
-  {
-    "id": "automated-emails",
-    "name": "Automated System Emails",
-    "condition": {
-      "type": "or",
-      "conditions": [
-        {
-          "type": "headerContains",
-          "name": "from",
-          "substring": "noreply@"
-        },
-        {
-          "type": "headerContains",
-          "name": "from",
-          "substring": "no-reply@"
-        },
-        {
-          "type": "headerContains",
-          "name": "from",
-          "substring": "donotreply@"
-        },
-        {
-          "type": "headerEquals",
-          "name": "auto-submitted",
-          "value": "auto-generated"
-        }
-      ]
-    },
-    "actions": [
-      {
-        "type": "addLabel",
-        "value": "automated"
-      },
-      {
-        "type": "addLabel",
-        "value": "no-reply"
-      },
-      {
-        "type": "setPriority",
-        "value": 3
-      }
-    ],
-    "priority": 3,
-    "enabled": true
-  },
-  {
-    "id": "receipts-invoices",
-    "name": "Receipts and Invoices",
-    "condition": {
-      "type": "or",
-      "conditions": [
-        {
-          "type": "headerMatches",
-          "name": "subject",
-          "pattern": "(?i)receipt|invoice|payment|order\\s+confirmation"
-        },
-        {
-          "type": "headerContains",
-          "name": "from",
-          "substring": "billing@"
-        },
-        {
-          "type": "headerContains",
-          "name": "from",
-          "substring": "payments@"
-        }
-      ]
-    },
-    "actions": [
-      {
-        "type": "addLabel",
-        "value": "financial"
-      },
-      {
-        "type": "addLabel",
-        "value": "receipts"
-      },
-      {
-        "type": "setPriority",
-        "value": 6
-      }
-    ],
-    "priority": 8,
-    "enabled": true
-  },
-  {
-    "id": "security-alerts",
-    "name": "Security Alerts",
-    "condition": {
-      "type": "or",
-      "conditions": [
-        {
-          "type": "headerMatches",
-          "name": "subject",
-          "pattern": "(?i)security|suspicious|login|password|verification|2fa|two.factor"
-        },
-        {
-          "type": "and",
-          "conditions": [
-            {
-              "type": "headerContains",
-              "name": "from",
-              "substring": "security@"
-            },
-            {
-              "type": "not",
-              "condition": {
-                "type": "headerContains",
-                "name": "subject",
-                "substring": "newsletter"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    "actions": [
-      {
-        "type": "addLabel",
-        "value": "security"
-      },
-      {
-        "type": "addLabel",
         "value": "important"
       },
       {
@@ -292,108 +32,424 @@
         "value": 9
       }
     ],
+    "priority": 100,
+    "enabled": true
+  },
+  {
+    "id": "newsletters-and-news",
+    "name": "Newsletter and News Detection",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "newsletter"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "noreply"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "newsletter"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "weekly update"
+        },
+        {
+          "type": "headerContains",
+          "name": "list-unsubscribe",
+          "substring": "http"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "addLabel",
+        "value": "news"
+      }
+    ],
     "priority": 50,
     "enabled": true
   },
   {
-    "id": "social-media",
-    "name": "Social Media Notifications",
+    "id": "legal-documents",
+    "name": "Legal and Compliance Emails",
     "condition": {
       "type": "or",
       "conditions": [
         {
-          "type": "headerMatches",
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "terms of service"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "privacy policy"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "legal notice"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "compliance"
+        },
+        {
+          "type": "headerContains",
           "name": "from",
-          "pattern": ".*(facebook|twitter|linkedin|instagram|reddit).*"
+          "substring": "legal@"
         },
         {
           "type": "headerContains",
           "name": "subject",
-          "substring": "liked your post"
-        },
-        {
-          "type": "headerContains",
-          "name": "subject",
-          "substring": "commented on"
-        },
-        {
-          "type": "headerContains",
-          "name": "subject",
-          "substring": "followed you"
+          "substring": "DMCA"
         }
       ]
     },
     "actions": [
       {
         "type": "addLabel",
-        "value": "social"
+        "value": "legal"
       }
     ],
-    "priority": 1,
+    "priority": 70,
     "enabled": true
   },
   {
-    "id": "personal-vip",
-    "name": "VIP Personal Contacts",
+    "id": "authentication-security",
+    "name": "Authentication and Security",
     "condition": {
       "type": "or",
       "conditions": [
         {
-          "type": "headerMatches",
-          "name": "from",
-          "pattern": "(?i)(jonte|luc)@.*"
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "two-factor"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "2fa"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "login attempt"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "verification code"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "security alert"
         },
         {
           "type": "headerContains",
           "name": "from",
-          "substring": "family@"
+          "substring": "security@"
         }
       ]
     },
     "actions": [
       {
         "type": "addLabel",
-        "value": "personal"
-      },
-      {
-        "type": "addLabel",
-        "value": "vip"
+        "value": "authentication"
       },
       {
         "type": "setPriority",
-        "value": 9
+        "value": 8
       }
     ],
-    "priority": 20,
+    "priority": 90,
     "enabled": true
   },
   {
-    "id": "spam-likely",
-    "name": "Likely Spam",
+    "id": "security-compromises",
+    "name": "Security Compromises and Breaches",
     "condition": {
-      "type": "and",
+      "type": "or",
       "conditions": [
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "headerMatches",
-              "name": "subject",
-              "pattern": "(?i)(lottery|winner|claim.*prize|act\\s+now|limited\\s+time)"
-            },
-            {
-              "type": "headerContains",
-              "name": "subject",
-              "substring": "RE: RE: RE: RE:"
-            }
-          ]
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "security breach"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "data breach"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "account compromised"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "suspicious activity"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "password changed"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "addLabel",
+        "value": "compromises"
+      },
+      {
+        "type": "setPriority",
+        "value": 10
+      }
+    ],
+    "priority": 95,
+    "enabled": true
+  },
+  {
+    "id": "receipts-purchases",
+    "name": "Purchase Receipts and Invoices",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "receipt"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "invoice"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "payment confirmation"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "purchase confirmation"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "receipts@"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "billing@"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "addLabel",
+        "value": "receipts"
+      }
+    ],
+    "priority": 60,
+    "enabled": true
+  },
+  {
+    "id": "shipping-delivery",
+    "name": "Shipping and Delivery Updates",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "shipped"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "tracking"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "delivery"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "package"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "fedex"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "ups"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "dhl"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "addLabel",
+        "value": "shipping"
+      }
+    ],
+    "priority": 40,
+    "enabled": true
+  },
+  {
+    "id": "calendar-invites",
+    "name": "Calendar Invitations",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerContains",
+          "name": "content-type",
+          "substring": "text/calendar"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "invitation"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "meeting request"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "calendar"
+        },
+        {
+          "type": "headerEquals",
+          "name": "method",
+          "value": "REQUEST"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "addLabel",
+        "value": "calendar-invites"
+      },
+      {
+        "type": "setPriority",
+        "value": 7
+      }
+    ],
+    "priority": 80,
+    "enabled": true
+  },
+  {
+    "id": "meeting-notes",
+    "name": "Meeting Notes and Summaries",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "meeting notes"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "meeting summary"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "action items"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "meeting minutes"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "zoom"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "teams"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "addLabel",
+        "value": "meeting-notes"
+      }
+    ],
+    "priority": 65,
+    "enabled": true
+  },
+  {
+    "id": "junk-spam",
+    "name": "Junk and Spam Detection",
+    "condition": {
+      "type": "or",
+      "conditions": [
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "make money fast"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "click here"
+        },
+        {
+          "type": "headerContains",
+          "name": "subject",
+          "substring": "congratulations"
+        },
+        {
+          "type": "headerMatches",
+          "name": "subject",
+          "pattern": "^RE:.*RE:.*RE:"
+        },
+        {
+          "type": "headerContains",
+          "name": "from",
+          "substring": "noreply@suspicious"
         },
         {
           "type": "not",
           "condition": {
             "type": "headerContains",
-            "name": "from",
-            "substring": "@v3x.email"
+            "name": "received",
+            "substring": "trusted-domain.com"
           }
         }
       ]
@@ -401,43 +457,14 @@
     "actions": [
       {
         "type": "addLabel",
-        "value": "spam"
-      },
-      {
-        "type": "addLabel",
-        "value": "review"
+        "value": "junk"
       },
       {
         "type": "setPriority",
-        "value": 0
+        "value": 1
       }
     ],
-    "priority": 1,
-    "enabled": true
-  },
-  {
-    "id": "otp-codes" ,
-    "name": "One-Time Password Emails",
-    "condition": {
-      "type": "headerMatches",
-      "name": "subject",
-      "pattern": "(?i)(one[- ]?time\\s+password|otp|verification\\s+code|security\\s+code)"
-    },
-    "actions": [
-      {
-        "type": "addLabel",
-        "value": "security"
-      },
-      {
-        "type": "addLabel",
-        "value": "otp"
-      },
-      {
-        "type": "setPriority",
-        "value": 10
-      }
-    ],
-    "priority": 30,
+    "priority": 10,
     "enabled": true
   }
 ]
