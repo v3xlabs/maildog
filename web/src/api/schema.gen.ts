@@ -119,6 +119,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/emails/reindex": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reindex all emails by reapplying rules and categories */
+        post: {
+            parameters: {
+                query?: {
+                    /** @description Optional IMAP config ID to reindex only specific account emails */
+                    imap_config_id?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ReindexResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/imap-configs": {
         parameters: {
             query?: never;
@@ -786,6 +824,21 @@ export interface components {
             position: number;
             created_at: string;
             updated_at: string;
+        };
+        /**
+         * ReindexResponse
+         * @description Response for email reindexing operation
+         */
+        ReindexResponse: {
+            message: string;
+            /** Format: int64 */
+            total_emails: number;
+            /** Format: int64 */
+            processed_emails: number;
+            /** Format: int64 */
+            failed_emails: number;
+            /** Format: int64 */
+            cleared_emails: number;
         };
         /** RuleListResponse */
         RuleListResponse: {
