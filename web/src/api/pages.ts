@@ -14,11 +14,13 @@ export type PageResponse = components['schemas']['PageResponse'] & {
     category?: string;
 };
 export type PageListResponse = components['schemas']['PageListResponse'];
-export type CreatePageRequest = components['schemas']['CreatePageRequest'] & {
+export type CreatePageRequest = Omit<components['schemas']['CreatePageRequest'], 'position'> & {
     category?: string;
+    position?: number;
 };
-export type UpdatePageRequest = components['schemas']['UpdatePageRequest'] & {
+export type UpdatePageRequest = Omit<components['schemas']['UpdatePageRequest'], 'position'> & {
     category?: string;
+    position?: number;
 };
 export type PageMessageResponse = components['schemas']['PageMessageResponse'];
 
@@ -61,6 +63,19 @@ export const getPages = (userId: string) =>
 
 export const usePages = (userId: string) => useQuery(getPages(userId));
 
+export const getCategories = (userId: string) =>
+    queryOptions({
+        queryKey: ['pages', 'categories', userId],
+        queryFn: async (): Promise<{ categories: string[] }> => {
+            const response = await useApi('/pages/{user_id}/categories', 'get', {
+                path: { user_id: userId },
+            });
+            return response.data;
+        },
+    });
+
+export const useCategories = (userId: string) => useQuery(getCategories(userId));
+
 export const useCreatePage = () => {
     const queryClient = useQueryClient();
 
@@ -92,7 +107,6 @@ export const useUpdatePage = () => {
             name: string;
             page_type: string;
             config: string;
-            position: number;
             category?: string;
         }) => {
             const data: UpdatePageRequest = {
@@ -100,7 +114,6 @@ export const useUpdatePage = () => {
                 slug: formData.slug,
                 page_type: formData.page_type,
                 config: formData.config,
-                position: formData.position,
                 category: formData.category,
             };
 

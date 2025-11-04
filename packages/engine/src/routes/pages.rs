@@ -54,7 +54,7 @@ pub struct CreatePageRequest {
     pub category: Option<String>,
     pub page_type: String,
     pub config: String,
-    pub position: i64,
+    pub position: Option<i64>,
 }
 
 /// Request to update a page
@@ -65,7 +65,7 @@ pub struct UpdatePageRequest {
     pub category: Option<String>,
     pub page_type: String,
     pub config: String,
-    pub position: i64,
+    pub position: Option<i64>,
 }
 
 /// Response containing a list of pages
@@ -80,10 +80,15 @@ pub struct PageMessageResponse {
     pub message: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Object)]
+pub struct CategoryListResponse {
+    pub categories: Vec<String>,
+}
+
 #[OpenApi]
 impl PagesApi {
     /// Get all pages for a user
-    #[oai(path = "/pages/:user_id", method = "get")]
+    #[oai(path = "/pages/:user_id", method = "get", tag = "super::ApiTags::Pages")]
     async fn get_pages(
         &self,
         Data(app_state): Data<&Arc<AppState>>,
@@ -99,7 +104,7 @@ impl PagesApi {
     }
 
     /// Get a single page by slug
-    #[oai(path = "/pages/detail/:slug", method = "get")]
+    #[oai(path = "/pages/detail/:slug", method = "get", tag = "super::ApiTags::Pages")]
     async fn get_page(
         &self,
         Data(app_state): Data<&Arc<AppState>>,
@@ -114,7 +119,7 @@ impl PagesApi {
     }
 
     /// Get a single page by slug
-    #[oai(path = "/pages/:user_id/:slug", method = "get")]
+    #[oai(path = "/pages/:user_id/:slug", method = "get", tag = "super::ApiTags::Pages")]
     async fn get_page_by_slug(
         &self,
         Data(app_state): Data<&Arc<AppState>>,
@@ -130,12 +135,22 @@ impl PagesApi {
     }
 
     /// Create a new page
-    #[oai(path = "/pages", method = "post")]
+    #[oai(path = "/pages", method = "post", tag = "super::ApiTags::Pages")]
     async fn create_page(
         &self,
         Data(app_state): Data<&Arc<AppState>>,
         Json(req): Json<CreatePageRequest>,
     ) -> poem::Result<Json<PageResponse>> {
+        let position = match req.position {
+            Some(pos) => pos,
+            None => {
+                let existing_pages = Page::get_all_for_user(&app_state.db_pool, &req.user_id)
+                    .await
+                    .map_err(|e| poem::Error::from_string(e.to_string(), poem::http::StatusCode::INTERNAL_SERVER_ERROR))?;
+                existing_pages.len() as i64 + 1
+            }
+        };
+
         let new_page = NewPage {
             slug: req.slug,
             user_id: req.user_id,
@@ -143,7 +158,7 @@ impl PagesApi {
             category: req.category,
             page_type: req.page_type,
             config: req.config,
-            position: req.position,
+            position,
         };
 
         let page = Page::insert(&app_state.db_pool, new_page)
@@ -154,13 +169,24 @@ impl PagesApi {
     }
 
     /// Update an existing page
-    #[oai(path = "/pages/:slug", method = "put")]
+    #[oai(path = "/pages/:slug", method = "put", tag = "super::ApiTags::Pages")]
     async fn update_page(
         &self,
         Data(app_state): Data<&Arc<AppState>>,
         slug: Path<String>,
         Json(req): Json<UpdatePageRequest>,
     ) -> poem::Result<Json<PageResponse>> {
+        let position = match req.position {
+            Some(pos) => pos,
+            None => {
+                let current_page = Page::get_by_slug_id(&app_state.db_pool, &slug)
+                    .await
+                    .map_err(|e| poem::Error::from_string(e.to_string(), poem::http::StatusCode::INTERNAL_SERVER_ERROR))?
+                    .ok_or_else(|| poem::Error::from_string("Page not found", poem::http::StatusCode::NOT_FOUND))?;
+                current_page.position
+            }
+        };
+
         let page = Page::update(
             &app_state.db_pool,
             &slug,
@@ -169,7 +195,7 @@ impl PagesApi {
             req.category,
             req.page_type,
             req.config,
-            req.position,
+            position,
         )
         .await
         .map_err(|e| poem::Error::from_string(e.to_string(), poem::http::StatusCode::INTERNAL_SERVER_ERROR))?;
@@ -178,7 +204,7 @@ impl PagesApi {
     }
 
     /// Delete a page
-    #[oai(path = "/pages/:slug", method = "delete")]
+    #[oai(path = "/pages/:slug", method = "delete", tag = "super::ApiTags::Pages")]
     async fn delete_page(
         &self,
         Data(app_state): Data<&Arc<AppState>>,
@@ -191,5 +217,19 @@ impl PagesApi {
         Ok(Json(PageMessageResponse {
             message: "Page deleted successfully".to_string(),
         }))
+    }
+
+    /// Get categories for a user
+    #[oai(path = "/pages/:user_id/categories", method = "get", tag = "super::ApiTags::Pages")]
+    async fn get_categories(
+        &self,
+        Data(app_state): Data<&Arc<AppState>>,
+        user_id: Path<String>,
+    ) -> poem::Result<Json<CategoryListResponse>> {
+        let categories = Page::get_categories_for_user(&app_state.db_pool, &user_id)
+            .await
+            .map_err(|e| poem::Error::from_string(e.to_string(), poem::http::StatusCode::INTERNAL_SERVER_ERROR))?;
+
+        Ok(Json(CategoryListResponse { categories }))
     }
 }

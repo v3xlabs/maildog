@@ -23,4 +23,6 @@ pub enum ApiTags {
     Rules,
     /// Authentication endpoints
     Auth,
+    /// Page management endpoints
+    Pages,
 }

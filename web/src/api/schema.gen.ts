@@ -647,6 +647,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pages/{user_id}/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    user_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["CategoryListResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -655,6 +691,10 @@ export interface components {
         CategorizeResponse: {
             /** Format: uint64 */
             actions_applied: number;
+        };
+        /** CategoryListResponse */
+        CategoryListResponse: {
+            categories: string[];
         };
         /**
          * CreateImapConfigRequest
@@ -682,7 +722,7 @@ export interface components {
             page_type: string;
             config: string;
             /** Format: int64 */
-            position: number;
+            position?: number;
         };
         /** CreateRuleRequest */
         CreateRuleRequest: {
@@ -887,7 +927,7 @@ export interface components {
             page_type: string;
             config: string;
             /** Format: int64 */
-            position: number;
+            position?: number;
         };
         /** UpdateRuleRequest */
         UpdateRuleRequest: {

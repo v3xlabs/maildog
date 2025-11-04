@@ -466,6 +466,18 @@ impl Page {
         .await
     }
 
+    pub async fn get_categories_for_user(
+        pool: &sqlx::SqlitePool,
+        user_id: &str,
+    ) -> Result<Vec<String>, sqlx::Error> {
+        sqlx::query_scalar(
+            r#"SELECT DISTINCT category FROM pages WHERE user_id = ? AND category IS NOT NULL AND category <> '' ORDER BY category"#,
+        )
+        .bind(user_id)
+        .fetch_all(pool)
+        .await
+    }
+
     pub async fn get_by_slug_id(
         pool: &sqlx::SqlitePool,
         slug: &str,
