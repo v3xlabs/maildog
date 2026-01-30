@@ -51,7 +51,7 @@
     "@types/ua-parser-js": "^0.7.39",
     "@types/url-search-params": "^1.1.2",
     "@typescript-eslint/parser": "^7.17.0",
-    "eslint": "^8.57.0",
+    "eslint": "^9.26.0",
     "eslint-plugin-v3xlabs": "^1.6.5",
     "typescript": "^5.5.4"
   }
