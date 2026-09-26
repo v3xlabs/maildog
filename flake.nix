@@ -30,13 +30,15 @@
       );
   in {
     formatter = forEachSystem (pkgs: pkgs.alejandra);
-    devShells = forEachSystem ({pkgs}: {
+
+    devShells = forEachSystem (pkgs: {
       default = pkgs.mkShell {
         packages = with pkgs; [
           (pkgs.rust-bin.stable.latest.default.override {
             extensions = [
               "rust-src"
               "rust-analyzer"
+              "bacon"
             ];
           })
           openssl
@@ -52,15 +54,20 @@
           nodePackages.prettier
           sccache
 
-          shellHook = ''
-            source scripts/dev.sh
-            # Disable SCCache if enabled
-            unset RUSTC_WRAPPER
-            # get current directory
-            export CURRENT_DIR=$(pwd)
-            export DATABASE_URL=sqlite://$CURRENT_DIR/database.db
-          '';
-        };
-      });
-    };
+          # D-Bus development libraries
+          dbus
+          dbus.dev
+        ];
+
+        shellHook = ''
+          source scripts/dev.sh
+          # Disable SCCache if enabled
+          unset RUSTC_WRAPPER
+          # get current directory
+          export CURRENT_DIR=$(pwd)
+          export DATABASE_URL=sqlite://$CURRENT_DIR/database.db
+        '';
+      };
+    });
+  };
 }
