@@ -38,9 +38,9 @@
             extensions = [
               "rust-src"
               "rust-analyzer"
-              "bacon"
             ];
           })
+          bacon
           openssl
           pkg-config
           bashInteractive

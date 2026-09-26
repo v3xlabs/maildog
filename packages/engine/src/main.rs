@@ -25,6 +25,7 @@ pub mod ingress;
 pub mod keyring;
 pub mod routes;
 pub mod state;
+pub mod store;
 
 fn get_api() -> impl OpenApi {
     (HealthApi, EmailApi, ImapConfigApi)
