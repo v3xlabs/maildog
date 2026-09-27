@@ -1,11 +1,16 @@
-import { createLazyFileRoute } from '@tanstack/react-router';
+import { createLazyFileRoute } from '@tanstack/solid-router';
 
 import { EmailDetail } from '@/components/preview/EmailDetail';
 
 export const Route = createLazyFileRoute('/_layout/m/$mail/$imap_uid')({
     component: () => {
-        const { mail, imap_uid } = Route.useParams();
+        const parameters = Route.useParams();
 
-        return <EmailDetail configId={mail} imapUid={imap_uid} />;
+        return (
+            <EmailDetail
+                configId={parameters().mail}
+                imapUid={parameters().imap_uid}
+            />
+        );
     },
 });

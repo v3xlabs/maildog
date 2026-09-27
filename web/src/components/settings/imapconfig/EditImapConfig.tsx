@@ -1,46 +1,49 @@
-import { ImapConfigResponse, useCreateImapConfig, useDeleteImapConfig, useUpdateImapConfig } from "@/api/imapConfig";
-import { ImapConfigForm } from "@/components/ImapConfigForm";
-import { Button } from "@/components/ui/Button";
-import { DialogContent, DialogDescription, DialogRoot, DialogTitle, DialogTrigger } from "@/components/ui/Dialog";
-import { FC, useState } from "react";
-import { LuPencil } from "react-icons/lu";
+import PencilIcon from '~icons/lucide/pencil';
 
-const EditImapConfigModal: FC<{ config: ImapConfigResponse }> = ({ config }) => {
-    const [editingConfig, setEditingConfig] =
-        useState<ImapConfigResponse>(config);
-    const { mutate: updateConfig, isPending: updatePending } = useUpdateImapConfig();
-    const { mutate: deleteConfig, isPending: deletePending } = useDeleteImapConfig();
+import {
+    ImapConfigResponse,
+    useDeleteImapConfig,
+    useUpdateImapConfig,
+} from '@/api/imapConfig';
+import { ImapConfigForm } from '@/components/ImapConfigForm';
+import { buttonVariants } from '@/components/ui/Button';
+import {
+    DialogContent,
+    DialogDescription,
+    DialogRoot,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/Dialog';
+
+const EditImapConfigModal = (props: { config: ImapConfigResponse }) => {
+    const updateConfig = useUpdateImapConfig();
+    const deleteConfig = useDeleteImapConfig();
 
     return (
-        <div className="max-w-md w-screen">
-            <DialogTitle>
-                Edit Email Account
-            </DialogTitle>
+        <div class="max-w-md w-screen">
+            <DialogTitle>Edit Email Account</DialogTitle>
             <DialogDescription>
                 Edit the email account configuration.
             </DialogDescription>
             <ImapConfigForm
-                config={editingConfig}
-                onSubmit={(data) => updateConfig({ id: config.id, data })}
-                onCancel={() => setEditingConfig(config)}
-                onDelete={() => deleteConfig(config.id)}
-                isLoading={updatePending}
+                config={props.config}
+                onSubmit={(data) =>
+                    updateConfig.mutate({ id: props.config.id, data })
+                }
+                onDelete={() => deleteConfig.mutate(props.config.id)}
+                isLoading={updateConfig.isPending}
             />
         </div>
-    )
+    );
 };
 
-export const EditImapConfigButton: FC<{ config: ImapConfigResponse }> = ({ config }) => {
-    return (
-        <DialogRoot>
-            <DialogTrigger asChild>
-                <Button variant="secondary" size="xs">
-                    <LuPencil />
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <EditImapConfigModal config={config} />
-            </DialogContent>
-        </DialogRoot>
-    )
-};
+export const EditImapConfigButton = (props: { config: ImapConfigResponse }) => (
+    <DialogRoot>
+        <DialogTrigger class={buttonVariants({ variant: 'secondary', size: 'xs' })}>
+            <PencilIcon />
+        </DialogTrigger>
+        <DialogContent>
+            <EditImapConfigModal config={props.config} />
+        </DialogContent>
+    </DialogRoot>
+);

@@ -1,13 +1,15 @@
+import type { JSX } from '@solidjs/web';
 import {
     MakeOptionalPathParams,
     RegisteredRouter,
-} from '@tanstack/react-router';
+} from '@tanstack/solid-router';
+import { Component } from 'solid-js';
 
 import { FileRoutesByTo } from '@/routeTree.gen';
 
 export type NavItem<T extends keyof FileRoutesByTo = keyof FileRoutesByTo> = {
     label: string;
-    icon: React.ReactNode;
+    icon: Component<JSX.SvgSVGAttributes<SVGSVGElement>>;
     to: T;
     pathParams?: MakeOptionalPathParams<
         RegisteredRouter,

@@ -3,7 +3,8 @@ import {
     queryOptions,
     useInfiniteQuery,
     useQuery,
-} from '@tanstack/react-query';
+} from '@tanstack/solid-query';
+import { Accessor } from 'solid-js';
 
 import { useApi } from './api';
 import { components } from './schema.gen';
@@ -13,20 +14,27 @@ export type EmailResponse = components['schemas']['EmailResponse'];
 export type EmailsListResponse = components['schemas']['EmailsListResponse'];
 export type EmailDetailResponse = components['schemas']['EmailDetailResponse'];
 
+const fetchEmails = async (
+    imapConfigId: number,
+    page: number
+): Promise<EmailsListResponse> => {
+    const response = await useApi('/emails', 'get', {
+        query: { imap_config_id: imapConfigId, page },
+    });
+
+    if (response.status === 200) return response.data;
+
+    throw new Error(`Could not load emails (${response.status})`);
+};
+
 export const getEmails = (imapConfigId: number, page: number = 1) =>
     queryOptions({
         queryKey: ['emails', imapConfigId, page],
-        queryFn: async (): Promise<EmailsListResponse> => {
-            const response = await useApi('/emails', 'get', {
-                query: { imap_config_id: imapConfigId, page },
-            });
-
-            return response.data;
-        },
+        queryFn: () => fetchEmails(imapConfigId, page),
     });
 
-export const useEmails = (imapConfigId: number, page: number = 1) =>
-    useQuery(getEmails(imapConfigId, page));
+export const useEmails = (imapConfigId: Accessor<number>) =>
+    useQuery(() => getEmails(imapConfigId()));
 
 export const getEmail = (imapConfigId: number, imapUid: number) =>
     queryOptions({
@@ -37,23 +45,21 @@ export const getEmail = (imapConfigId: number, imapUid: number) =>
                 query: { imap_config_id: imapConfigId },
             });
 
-            return response.data;
+            if (response.status === 200) return response.data;
+
+            throw new Error(`Could not load email (${response.status})`);
         },
     });
 
-export const useEmail = (imapConfigId: number, imapUid: number) =>
-    useQuery(getEmail(imapConfigId, imapUid));
+export const useEmail = (
+    imapConfigId: Accessor<number>,
+    imapUid: Accessor<number>
+) => useQuery(() => getEmail(imapConfigId(), imapUid()));
 
 export const getEmailsInfinite = (imapConfigId: number) =>
     infiniteQueryOptions({
         queryKey: ['emails', imapConfigId, 'infinite'],
-        queryFn: async ({ pageParam }): Promise<EmailsListResponse> => {
-            const response = await useApi('/emails', 'get', {
-                query: { imap_config_id: imapConfigId, page: pageParam },
-            });
-
-            return response.data;
-        },
+        queryFn: ({ pageParam }) => fetchEmails(imapConfigId, pageParam),
         initialPageParam: 1,
         getNextPageParam: (
             lastPage: EmailsListResponse,
@@ -68,5 +74,5 @@ export const getEmailsInfinite = (imapConfigId: number) =>
         },
     });
 
-export const useEmailsInfinite = (imapConfigId: number) =>
-    useInfiniteQuery(getEmailsInfinite(imapConfigId));
+export const useEmailsInfinite = (imapConfigId: Accessor<number>) =>
+    useInfiniteQuery(() => getEmailsInfinite(imapConfigId()));

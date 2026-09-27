@@ -1,5 +1,6 @@
 import { createFetch } from 'openapi-hooks';
-import { toast } from 'sonner';
+
+import { showToast } from '@/components/ui/Toast';
 
 import { paths } from './schema.gen';
 
@@ -8,12 +9,12 @@ export const baseUrl = new URL(
     import.meta.env.VITE_API_URL ?? window.location.origin
 );
 
-// @ts-expect-error - openapi-hooks type constraint is too strict
 export const useApi = createFetch<paths>({
     baseUrl,
-    onError(error: { status: number }) {
+    onError(error) {
         if (error.status === 429) {
-            toast.error(
+            showToast(
+                'error',
                 'Request throttled, please wait a moment before retrying'
             );
         }

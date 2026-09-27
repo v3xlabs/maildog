@@ -1,8 +1,10 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
-import { useElapsedTime } from 'use-elapsed-time';
+import { useMutation, useQuery } from '@tanstack/solid-query';
+import { createFileRoute } from '@tanstack/solid-router';
+import { createSignal, onCleanup, Show } from 'solid-js';
 
-import { useInstanceConfig } from '../../hooks/useInstanceConfig';
+import { instanceUrl } from '@/utils/instanceConfig';
+
+const slowSignInDelayMs = 5000;
 
 export const Route = createFileRoute('/login/_layout/callback')({
     component: () => {
@@ -13,12 +15,11 @@ export const Route = createFileRoute('/login/_layout/callback')({
         const code = url.searchParams.get('code');
         const state = url.searchParams.get('state');
 
-        const { instance_url } = useInstanceConfig();
-        const { data: auth_token, error } = useQuery({
+        const authToken = useQuery(() => ({
             queryKey: ['auth_token'],
             retry: false,
             queryFn: async () => {
-                const response = await fetch(instance_url + '/auth/token', {
+                const response = await fetch(instanceUrl() + '/auth/token', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -35,13 +36,13 @@ export const Route = createFileRoute('/login/_layout/callback')({
                     access_token: string;
                 };
             },
-        });
-        const { data: me } = useQuery({
+        }));
+        const me = useQuery(() => ({
             queryKey: ['me'],
             queryFn: async () => {
-                const response = await fetch(instance_url + '/auth/me', {
+                const response = await fetch(instanceUrl() + '/auth/me', {
                     headers: {
-                        Authorization: `Bearer ${auth_token?.access_token}`,
+                        Authorization: `Bearer ${authToken.data?.access_token}`,
                     },
                     credentials: 'include',
                 });
@@ -50,13 +51,13 @@ export const Route = createFileRoute('/login/_layout/callback')({
                     user: {};
                 };
             },
-            enabled: !!auth_token,
-        });
-        const { mutate } = useMutation({
+            enabled: authToken.isSuccess,
+        }));
+        const logout = useMutation(() => ({
             mutationFn: async () => {
-                const response = await fetch(instance_url + '/auth/logout', {
+                const response = await fetch(instanceUrl() + '/auth/logout', {
                     headers: {
-                        Authorization: `Bearer ${auth_token?.access_token}`,
+                        Authorization: `Bearer ${authToken.data?.access_token}`,
                     },
                     credentials: 'include',
                 });
@@ -65,69 +66,68 @@ export const Route = createFileRoute('/login/_layout/callback')({
                     status: string;
                 };
             },
-        });
+        }));
 
-        const { elapsedTime } = useElapsedTime({
-            isPlaying: true,
-            updateInterval: 1,
-            duration: 5,
-        });
+        const [isSlow, setIsSlow] = createSignal(false);
+        const slowTimer = setTimeout(() => setIsSlow(true), slowSignInDelayMs);
+
+        onCleanup(() => clearTimeout(slowTimer));
 
         return (
-            <div className="space-y-4">
+            <div class="space-y-4">
                 <div>
-                    {elapsedTime >= 5 ? 'Still processing' : 'Processing'} your
-                    sign-in request...
+                    {isSlow() ? 'Still processing' : 'Processing'} your sign-in
+                    request...
                 </div>
-                {elapsedTime >= 5 && (
-                    <>
-                        <hr />
-                        <h2 className="h2">Debug Information</h2>
-                        <p>
-                            The sign in process is taking longer than expected.
-                            Here is some debug information:
-                        </p>
-                        <pre className="bg-gray-100 p-4 rounded-md overflow-x-scroll">
-                            <div>session_state: {session_state}</div>
-                            <div>iss: {iss}</div>
-                            <div>code: {code}</div>
-                            <div>state: {state}</div>
-                        </pre>
-                        <hr />
-                        <p>
-                            If you are not redirected, please click{' '}
-                            <a href="/login" className="link">
-                                here
-                            </a>
-                        </p>
-                    </>
-                )}
-                {error && (
-                    <div className="text-red-500 bg-red-100 p-4 rounded-md">
-                        <p>{error.message}</p>
-
-                        <a href="/login" className="button">
-                            Return to login
+                <Show when={isSlow()}>
+                    <hr />
+                    <h2 class="h2">Debug Information</h2>
+                    <p>
+                        The sign in process is taking longer than expected.
+                        Here is some debug information:
+                    </p>
+                    <pre class="bg-gray-100 p-4 rounded-md overflow-x-scroll">
+                        <div>session_state: {session_state}</div>
+                        <div>iss: {iss}</div>
+                        <div>code: {code}</div>
+                        <div>state: {state}</div>
+                    </pre>
+                    <hr />
+                    <p>
+                        If you are not redirected, please click{' '}
+                        <a href="/login" class="link">
+                            here
                         </a>
-                    </div>
-                )}
-                {auth_token && (
+                    </p>
+                </Show>
+                <Show when={authToken.error}>
+                    {(error) => (
+                        <div class="text-red-500 bg-red-100 p-4 rounded-md">
+                            <p>{error().message}</p>
+
+                            <a href="/login" class="button">
+                                Return to login
+                            </a>
+                        </div>
+                    )}
+                </Show>
+                <Show when={authToken.isSuccess}>
                     <div>
-                        <h2 className="h2">Auth Token</h2>
-                        <pre className="bg-gray-100 p-4 rounded-md overflow-x-scroll">
-                            {JSON.stringify(auth_token, undefined, 2)}
+                        <h2 class="h2">Auth Token</h2>
+                        <pre class="bg-gray-100 p-4 rounded-md overflow-x-scroll">
+                            {JSON.stringify(authToken.data, undefined, 2)}
                         </pre>
                     </div>
-                )}
-                {me && (
+                </Show>
+                <Show when={me.isSuccess}>
                     <div>
-                        <h2 className="h2">Me</h2>
-                        <pre className="bg-gray-100 p-4 rounded-md overflow-x-scroll">
-                            {JSON.stringify(me, undefined, 2)}
+                        <h2 class="h2">Me</h2>
+                        <pre class="bg-gray-100 p-4 rounded-md overflow-x-scroll">
+                            {JSON.stringify(me.data, undefined, 2)}
                         </pre>
-                        <button onClick={() => mutate()}>Logout</button>
+                        <button onClick={() => logout.mutate()}>Logout</button>
                     </div>
-                )}
+                </Show>
             </div>
         );
     },

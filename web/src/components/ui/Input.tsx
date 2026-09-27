@@ -1,36 +1,23 @@
+import type { JSX } from '@solidjs/web';
 import { cx } from 'class-variance-authority';
-import type { InputHTMLAttributes } from 'react';
-import { forwardRef, useId } from 'react';
+import { createUniqueId, omit } from 'solid-js';
 
-type InputProperties = InputHTMLAttributes<HTMLInputElement>;
+type InputProperties = JSX.InputHTMLAttributes<HTMLInputElement>;
 
-export const Input = forwardRef<HTMLInputElement, InputProperties>(
-    ({ className, 'aria-label': ariaLabel, ...properties }, reference) => {
-        const labelId = useId();
+export const Input = (properties: InputProperties) => {
+    const labelId = createUniqueId();
 
-        return (
-            <>
-                <label
-                    className="flex flex-col gap-1"
-                    id={'l' + labelId}
-                    htmlFor={'i' + labelId}
-                >
-                    <span className="text-sm text-text-secondary">
-                        {ariaLabel}
-                    </span>
-                    <input
-                        ref={reference}
-                        aria-label={ariaLabel}
-                        aria-labelledby={'l' + labelId}
-                        id={'i' + labelId}
-                        className={cx(
-                            'text-base font-sans px-2 py-1',
-                            className
-                        )}
-                        {...properties}
-                    />
-                </label>
-            </>
-        );
-    }
-);
+    return (
+        <label class="flex flex-col gap-1" id={'l' + labelId} for={'i' + labelId}>
+            <span class="text-sm text-text-secondary">
+                {properties['aria-label']}
+            </span>
+            <input
+                aria-labelledby={'l' + labelId}
+                id={'i' + labelId}
+                class={cx('text-base font-sans px-2 py-1', properties.class)}
+                {...omit(properties, 'class')}
+            />
+        </label>
+    );
+};

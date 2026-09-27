@@ -1,6 +1,6 @@
 import { MailConfigSettings } from '@/components/settings/imapconfig/MailConfigs'
-import { Button } from '@/components/ui/Button'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { buttonVariants } from '@/components/ui/Button'
+import { createFileRoute, Link } from '@tanstack/solid-router'
 
 export const Route = createFileRoute('/_layout/settings/')({
   component: RouteComponent,
@@ -8,13 +8,13 @@ export const Route = createFileRoute('/_layout/settings/')({
 
 function RouteComponent() {
   return (
-    <div className="mx-auto w-full max-w-lg py-4">
-      <div className="space-y-2">
+    <div class="mx-auto w-full max-w-lg py-4">
+      <div class="space-y-2">
         <MailConfigSettings />
-        <div className="card p-2">
-          <Button asChild>
-            <Link to="/logout">Logout</Link>
-          </Button>
+        <div class="card p-2">
+          <Link to="/logout" class={buttonVariants()}>
+            Logout
+          </Link>
         </div>
       </div>
     </div>

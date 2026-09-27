@@ -1,13 +1,11 @@
-import { LuCog } from 'react-icons/lu';
+import CogIcon from '~icons/lucide/cog';
 
 import { Button } from '../ui/Button';
 
-export const ConnectionSettings = () => {
-    return (
-        <div>
-            <Button variant="ghost">
-                <LuCog />
-            </Button>
-        </div>
-    );
-};
+export const ConnectionSettings = () => (
+    <div>
+        <Button variant="ghost">
+            <CogIcon />
+        </Button>
+    </div>
+);

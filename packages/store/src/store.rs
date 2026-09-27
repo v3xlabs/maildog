@@ -29,18 +29,17 @@ impl<E: StoreEngine> Store<E> {
             return Ok(blob_identity);
         }
 
-        let cipher = XChaCha20Poly1305::new(Key::from_slice(&self.encryption_key));
+        let cipher = XChaCha20Poly1305::new(&Key::from(self.encryption_key));
 
-        let nonce_bytes = rand::random::<[u8; NONCE_LEN]>();
-        let nonce = XNonce::from_slice(&nonce_bytes);
+        let nonce = XNonce::from(rand::random::<[u8; NONCE_LEN]>());
 
         let ciphertext = cipher
-            .encrypt(nonce, plaintext)
+            .encrypt(&nonce, plaintext)
             .map_err(|_| BlobError::Crypto)?;
 
-        let mut encoded = Vec::with_capacity(MAGIC.len() + nonce_bytes.len() + ciphertext.len());
+        let mut encoded = Vec::with_capacity(MAGIC.len() + nonce.len() + ciphertext.len());
         encoded.extend_from_slice(MAGIC);
-        encoded.extend_from_slice(&nonce_bytes);
+        encoded.extend_from_slice(&nonce);
         encoded.extend_from_slice(&ciphertext);
 
         self.engine.write(blob_identity.hex(), &encoded)?;
@@ -64,12 +63,14 @@ impl<E: StoreEngine> Store<E> {
             return Err(BlobError::InvalidFormat);
         }
 
-        let (nonce, ciphertext) = rest.split_at(NONCE_LEN);
-        let nonce = XNonce::from_slice(nonce);
-        let cipher = XChaCha20Poly1305::new(Key::from_slice(&self.encryption_key));
+        let (nonce, ciphertext) = rest
+            .split_first_chunk::<NONCE_LEN>()
+            .ok_or(BlobError::InvalidFormat)?;
+        let nonce = XNonce::from(*nonce);
+        let cipher = XChaCha20Poly1305::new(&Key::from(self.encryption_key));
 
         let plaintext = cipher
-            .decrypt(nonce, ciphertext)
+            .decrypt(&nonce, ciphertext)
             .map_err(|_| BlobError::Crypto)?;
 
         if &BlobId::new(&self.identity_key, &plaintext) != blob_identity {

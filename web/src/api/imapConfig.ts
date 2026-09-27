@@ -3,8 +3,9 @@ import {
     useMutation,
     useQuery,
     useQueryClient,
-} from '@tanstack/react-query';
-import { toast } from 'sonner';
+} from '@tanstack/solid-query';
+
+import { showToast } from '@/components/ui/Toast';
 
 import { useApi } from './api';
 import { components } from './schema.gen';
@@ -21,16 +22,20 @@ export const getImapConfigs = () =>
         queryFn: async (): Promise<ImapConfigListResponse> => {
             const response = await useApi('/imap-configs', 'get', {});
 
-            return response.data;
+            if (response.status === 200) return response.data;
+
+            throw new Error(
+                `Could not load IMAP configurations (${response.status})`
+            );
         },
     });
 
-export const useImapConfigs = () => useQuery(getImapConfigs());
+export const useImapConfigs = () => useQuery(() => getImapConfigs());
 
 export const useCreateImapConfig = () => {
     const queryClient = useQueryClient();
 
-    return useMutation({
+    return useMutation(() => ({
         mutationFn: async (formData: {
             name: string;
             mail_host: string;
@@ -52,22 +57,29 @@ export const useCreateImapConfig = () => {
                 data,
             });
 
-            return response.data;
+            if (response.status === 200) return response.data;
+
+            throw new Error(
+                `Failed to create IMAP configuration (${response.status})`
+            );
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['imap-configs'] });
-            toast.success('IMAP configuration created successfully');
+            void queryClient.invalidateQueries({ queryKey: ['imap-configs'] });
+            showToast('success', 'IMAP configuration created successfully');
         },
         onError: (error) => {
-            toast.error(error.message || 'Failed to create IMAP configuration');
+            showToast(
+                'error',
+                error.message || 'Failed to create IMAP configuration'
+            );
         },
-    });
+    }));
 };
 
 export const useUpdateImapConfig = () => {
     const queryClient = useQueryClient();
 
-    return useMutation({
+    return useMutation(() => ({
         mutationFn: async ({
             id,
             data,
@@ -88,35 +100,49 @@ export const useUpdateImapConfig = () => {
                 data,
             });
 
-            return response.data;
+            if (response.status === 200) return response.data;
+
+            throw new Error(
+                `Failed to update IMAP configuration (${response.status})`
+            );
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['imap-configs'] });
-            toast.success('IMAP configuration updated successfully');
+            void queryClient.invalidateQueries({ queryKey: ['imap-configs'] });
+            showToast('success', 'IMAP configuration updated successfully');
         },
         onError: (error) => {
-            toast.error(error.message || 'Failed to update IMAP configuration');
+            showToast(
+                'error',
+                error.message || 'Failed to update IMAP configuration'
+            );
         },
-    });
+    }));
 };
 
 export const useDeleteImapConfig = () => {
     const queryClient = useQueryClient();
 
-    return useMutation({
+    return useMutation(() => ({
         mutationFn: async (id: number) => {
             const response = await useApi('/imap-configs/{id}', 'delete', {
                 path: { id },
             });
 
-            return response.data;
+            if (response.status === 200) return response.data;
+
+            throw new Error(
+                `Failed to delete IMAP configuration (${response.status})`
+            );
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['imap-configs'] });
-            toast.success('IMAP configuration deleted successfully');
+            void queryClient.invalidateQueries({ queryKey: ['imap-configs'] });
+            showToast('success', 'IMAP configuration deleted successfully');
         },
         onError: (error) => {
-            toast.error(error.message || 'Failed to delete IMAP configuration');
+            showToast(
+                'error',
+                error.message || 'Failed to delete IMAP configuration'
+            );
         },
-    });
+    }));
 };

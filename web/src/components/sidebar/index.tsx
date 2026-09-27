@@ -1,21 +1,19 @@
-import { Link } from '@tanstack/react-router';
-import { FiSettings } from 'react-icons/fi';
-import {
-    LuBell,
-    LuCalendar,
-    LuCog,
-    LuFileText,
-    LuGavel,
-    LuHome,
-    LuKeyRound,
-    LuMail,
-    LuNewspaper,
-    LuShieldAlert,
-    LuStickyNote,
-    LuTruck,
-    LuUserPlus,
-} from 'react-icons/lu';
-import { match, P } from 'ts-pattern';
+import { Link } from '@tanstack/solid-router';
+import BellIcon from '~icons/lucide/bell';
+import CalendarIcon from '~icons/lucide/calendar';
+import CogIcon from '~icons/lucide/cog';
+import FileTextIcon from '~icons/lucide/file-text';
+import GavelIcon from '~icons/lucide/gavel';
+import HouseIcon from '~icons/lucide/house';
+import KeyRoundIcon from '~icons/lucide/key-round';
+import MailIcon from '~icons/lucide/mail';
+import NewspaperIcon from '~icons/lucide/newspaper';
+import SettingsIcon from '~icons/lucide/settings';
+import ShieldAlertIcon from '~icons/lucide/shield-alert';
+import StickyNoteIcon from '~icons/lucide/sticky-note';
+import TruckIcon from '~icons/lucide/truck';
+import UserPlusIcon from '~icons/lucide/user-plus';
+import { Errored, For, Loading, Show } from 'solid-js';
 
 import { useImapConfigs } from '@/api/imapConfig';
 
@@ -27,18 +25,18 @@ const defaultNav = [
         items: [
             createNavItem({
                 label: 'Home',
-                icon: <LuHome className="w-4 h-4" />,
+                icon: HouseIcon,
                 to: '/' as const,
             }),
             createNavItem({
                 label: 'Important',
-                icon: <LuBell className="w-4 h-4" />,
+                icon: BellIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'important' },
             }),
             createNavItem({
                 label: 'Calendar',
-                icon: <LuCalendar className="w-4 h-4" />,
+                icon: CalendarIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'calendar' },
             }),
@@ -50,13 +48,13 @@ const defaultNav = [
         items: [
             createNavItem({
                 label: 'Newsletters',
-                icon: <LuNewspaper className="w-4 h-4" />,
+                icon: NewspaperIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'news' },
             }),
             createNavItem({
                 label: 'Legal',
-                icon: <LuGavel className="w-4 h-4" />,
+                icon: GavelIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'legal' },
             }),
@@ -67,13 +65,13 @@ const defaultNav = [
         items: [
             createNavItem({
                 label: '2FA & SSO',
-                icon: <LuKeyRound className="w-4 h-4" />,
+                icon: KeyRoundIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'authentication' },
             }),
             createNavItem({
                 label: 'Compromises',
-                icon: <LuShieldAlert className="w-4 h-4" />,
+                icon: ShieldAlertIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'compromises' },
             }),
@@ -84,13 +82,13 @@ const defaultNav = [
         items: [
             createNavItem({
                 label: 'Receipts',
-                icon: <LuFileText className="w-4 h-4" />,
+                icon: FileTextIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'receipts' },
             }),
             createNavItem({
                 label: 'Shipping',
-                icon: <LuTruck className="w-4 h-4" />,
+                icon: TruckIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'shipping' },
             }),
@@ -101,13 +99,13 @@ const defaultNav = [
         items: [
             createNavItem({
                 label: 'Invites',
-                icon: <LuUserPlus className="w-4 h-4" />,
+                icon: UserPlusIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'calendar-invites' },
             }),
             createNavItem({
                 label: 'Meeting Notes',
-                icon: <LuStickyNote className="w-4 h-4" />,
+                icon: StickyNoteIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'meeting-notes' },
             }),
@@ -118,13 +116,13 @@ const defaultNav = [
         items: [
             createNavItem({
                 label: 'Everything',
-                icon: <LuMail className="w-4 h-4" />,
+                icon: MailIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'everything' },
             }),
             createNavItem({
                 label: 'Junk',
-                icon: <LuMail className="w-4 h-4" />,
+                icon: MailIcon,
                 to: '/t/$tag',
                 pathParams: { tag: 'junk' },
             }),
@@ -133,61 +131,68 @@ const defaultNav = [
 ] as const;
 
 export const Sidebar = () => {
-    const { data: configs, isLoading } = useImapConfigs();
-    const configLength = configs?.configs.length;
+    const configs = useImapConfigs();
 
     return (
-        <aside className="w-80 bg-sidebar border-r border-card-border flex flex-col">
-            <div className="p-4 ">
-                <h1 className="text-xl font-bold">🐕 Maildog</h1>
+        <aside class="w-80 bg-sidebar border-r border-card-border flex flex-col">
+            <div class="p-4 ">
+                <h1 class="text-xl font-bold">🐕 Maildog</h1>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3">
-                <ul className="space-y-3">
-                    {defaultNav.map((nav, index) => (
-                        <SidebarLinkGroup key={index} group={nav} />
-                    ))}
+            <div class="flex-1 overflow-y-auto space-y-3">
+                <ul class="space-y-3">
+                    <For each={defaultNav}>
+                        {(nav) => <SidebarLinkGroup group={nav} />}
+                    </For>
                 </ul>
-                {match({ isLoading, configLength })
-                    .with({ isLoading: true, configLength: undefined }, () => (
-                        <div className="text-center text-gray-500 py-8 px-4">
-                            Loading...
+                <Errored
+                    fallback={
+                        <div class="text-center text-gray-500 py-8">
+                            Something went wrong
                         </div>
-                    ))
-                    .with({ isLoading: false, configLength: 0 }, () => (
-                        <div className="text-center text-gray-500 py-8 px-4">
-                            <FiSettings className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                            <p>No email accounts yet </p>
-                        </div>
-                    ))
-                    .with(
-                        { isLoading: false, configLength: P.number.gte(1) },
-                        () => (
-                            <div className="">
-                                <div className="px-3.5 text-sm font-bold text-gray-500">
+                    }
+                >
+                    <Loading
+                        fallback={
+                            <div class="text-center text-gray-500 py-8 px-4">
+                                Loading...
+                            </div>
+                        }
+                    >
+                        <Show
+                            when={configs.data?.configs.length}
+                            fallback={
+                                <div class="text-center text-gray-500 py-8 px-4">
+                                    <SettingsIcon class="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                    <p>No email accounts yet </p>
+                                </div>
+                            }
+                        >
+                            <div class="">
+                                <div class="px-3.5 text-sm font-bold text-gray-500">
                                     Accounts
                                 </div>
-                                <ul className="">
-                                    {configs?.configs.map((config) => (
-                                        <Link
-                                            key={config.id}
-                                            to="/m/$mail"
-                                            params={{ mail: String(config.id) }}
-                                            className="flex px-4 py-1 transition-all cursor-pointer hover:bg-surface-primary"
-                                            activeProps={{
-                                                className: 'bg-surface-primary',
-                                            }}
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div className="w-full flex items-center gap-1">
-                                                    <h3 className="font-semibold text-sm text-gray-900 truncate">
-                                                        {config.name}
-                                                    </h3>
-                                                    <p className="text-xs text-gray-600 truncate">
-                                                        {config.username}
-                                                    </p>
+                                <ul class="">
+                                    <For each={configs.data?.configs}>
+                                        {(config) => (
+                                            <Link
+                                                to="/m/$mail"
+                                                params={{ mail: String(config.id) }}
+                                                class="flex px-4 py-1 transition-all cursor-pointer hover:bg-surface-primary"
+                                                activeProps={{
+                                                    class: 'bg-surface-primary',
+                                                }}
+                                            >
+                                                <div class="flex items-start justify-between">
+                                                    <div class="w-full flex items-center gap-1">
+                                                        <h3 class="font-semibold text-sm text-gray-900 truncate">
+                                                            {config.name}
+                                                        </h3>
+                                                        <p class="text-xs text-gray-600 truncate">
+                                                            {config.username}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
                                             {/* 
                                         <div className="flex gap-1 mt-2" >
                                         <button
@@ -212,27 +217,24 @@ export const Sidebar = () => {
                                                     <FiTrash2 className="w-3 h-3" />
                                                     </button>
                                                     </div> */}
-                                        </Link>
-                                    ))}
+                                            </Link>
+                                        )}
+                                    </For>
                                 </ul>
                             </div>
-                        )
-                    )
-                    .otherwise(() => (
-                        <div className="text-center text-gray-500 py-8">
-                            Something went wrong
-                        </div>
-                    ))}
+                        </Show>
+                    </Loading>
+                </Errored>
             </div>
 
-            <div className="p-1 border-t border-gray-200">
+            <div class="p-1 border-t border-gray-200">
                 <Link
                     to="/settings"
                     // onClick = {() => setShowAddForm(true)}
-                    className="w-full text-sm text-neutral-700 py-2 rounded-lg font-medium hover:bg-neutral-100 transition-colors flex items-center justify-start px-3 gap-2 group"
+                    class="w-full text-sm text-neutral-700 py-2 rounded-lg font-medium hover:bg-neutral-100 transition-colors flex items-center justify-start px-3 gap-2 group"
                 >
-                    <LuCog className="w-4 h-4" />
-                    <span className="opacity-10 group-hover:opacity-100 transition-opacity">Settings</span>
+                    <CogIcon class="w-4 h-4" />
+                    <span class="opacity-10 group-hover:opacity-100 transition-opacity">Settings</span>
                 </Link>
             </div>
         </aside>

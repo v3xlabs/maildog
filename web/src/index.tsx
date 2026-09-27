@@ -1,8 +1,7 @@
 import './index.css';
 
-import { createRouter, RouterProvider } from '@tanstack/react-router';
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { render } from '@solidjs/web';
+import { createRouter, RouterProvider } from '@tanstack/solid-router';
 
 // Import the generated route tree
 import { routeTree } from './routeTree.gen';
@@ -11,16 +10,14 @@ import { routeTree } from './routeTree.gen';
 const router = createRouter({ routeTree });
 
 // Register the router instance for type safety
-declare module '@tanstack/react-router' {
-    // eslint-disable-next-line unused-imports/no-unused-vars
+declare module '@tanstack/solid-router' {
     interface Register {
         router: typeof router;
     }
 }
 
-// eslint-disable-next-line no-undef
-ReactDOM.createRoot(document.querySelector('#root')!).render(
-    <React.StrictMode>
-        <RouterProvider router={router} />
-    </React.StrictMode>
-);
+const root = document.querySelector('#root');
+
+if (!root) throw new Error('Missing #root element');
+
+render(() => <RouterProvider router={router} />, root);

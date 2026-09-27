@@ -22,8 +22,8 @@
         "lib": ["es2022", "dom", "dom.iterable"],
         "incremental": true,
         "jsx": "preserve",
+        "jsxImportSource": "@solidjs/web",
         "strictNullChecks": true,
-        "baseUrl": ".",
         "paths": {
             "@/*": ["./src/*"]
         }

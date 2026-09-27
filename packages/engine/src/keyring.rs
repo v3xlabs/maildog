@@ -1,5 +1,4 @@
 use base64::prelude::*;
-use rand::Rng;
 use tracing::{info, warn};
 
 use crate::error::MailDogError;
@@ -29,7 +28,7 @@ impl Keyring {
                 warn!("Error getting passphrase: {:?}", error);
 
                 warn!("No passphrase found in keyring, a new token will be generated");
-                let passphrase = rand::thread_rng().gen::<[u8; 32]>();
+                let passphrase = rand::random::<[u8; 32]>();
                 let new_passphrase = base64::prelude::BASE64_STANDARD.encode(passphrase);
 
                 if let Err(save_error) = entry.set_password(&new_passphrase) {

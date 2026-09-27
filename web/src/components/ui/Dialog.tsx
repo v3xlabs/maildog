@@ -1,55 +1,54 @@
-import { Content, Description, DialogPortal, Overlay, Title } from '@radix-ui/react-dialog';
+import {
+    Content,
+    Description,
+    Overlay,
+    Portal,
+    Title,
+} from '@kobalte/core/dialog';
 import clsx from 'clsx';
-import { ComponentPropsWithoutRef, ElementRef, forwardRef } from 'react';
+import { ComponentProps, omit } from 'solid-js';
 
-export const DialogContent = forwardRef<
-    ElementRef<typeof Content>,
-    ComponentPropsWithoutRef<typeof Content>
->(({ className, children, ...properties }, reference) => (
-    <DialogPortal>
+export const DialogContent = (properties: ComponentProps<typeof Content>) => (
+    <Portal>
         <DialogOverlay />
         <Content
-            ref={reference}
-            className={clsx(
-                'fixed left-[50%] top-[50%] z-50 grid max-w-[90dvw] translate-x-[-50%] translate-y-[-50%] gap-4 border border-card-border bg-card p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg',
-                className
+            class={clsx(
+                'fixed left-[50%] top-[50%] z-50 grid max-w-[90dvw] translate-x-[-50%] translate-y-[-50%] gap-4 border border-card-border bg-card p-6 shadow-lg duration-200 data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 data-[closed]:slide-out-to-left-1/2 data-[closed]:slide-out-to-top-[48%] data-[expanded]:slide-in-from-left-1/2 data-[expanded]:slide-in-from-top-[48%] rounded-lg',
+                properties.class
             )}
-            {...properties}
-        >
-            {children}
-        </Content>
-    </DialogPortal>
-));
+            {...omit(properties, 'class')}
+        />
+    </Portal>
+);
 
-export const DialogOverlay = forwardRef<
-    ElementRef<typeof Overlay>,
-    ComponentPropsWithoutRef<typeof Overlay>
->(({ className, ...properties }, reference) => (
+export const DialogOverlay = (properties: ComponentProps<typeof Overlay>) => (
     <Overlay
-        ref={reference}
-        className={clsx(
-            'fixed inset-0 z-50 bg-black/30 p-2 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-            className
+        class={clsx(
+            'fixed inset-0 z-50 bg-black/30 p-2 data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0',
+            properties.class
         )}
-        {...properties}
+        {...omit(properties, 'class')}
     />
-));
+);
 
-export const DialogTitle = forwardRef<
-    ElementRef<typeof Title>,
-    ComponentPropsWithoutRef<typeof Title>
->(({ className, ...properties }, reference) => (
-    <Title ref={reference} className={clsx('text-2xl font-bold', className)} {...properties} />
-));
+export const DialogTitle = (properties: ComponentProps<typeof Title>) => (
+    <Title
+        class={clsx('text-2xl font-bold', properties.class)}
+        {...omit(properties, 'class')}
+    />
+);
 
-export const DialogDescription = forwardRef<
-    ElementRef<typeof Description>,
-    ComponentPropsWithoutRef<typeof Description>
->(({ className, ...properties }, reference) => (
-    <Description ref={reference} className={clsx('text-sm text-gray-500', className)} {...properties} />
-));
+export const DialogDescription = (
+    properties: ComponentProps<typeof Description>
+) => (
+    <Description
+        class={clsx('text-sm text-gray-500', properties.class)}
+        {...omit(properties, 'class')}
+    />
+);
 
 export {
+    CloseButton as DialogClose,
     Root as DialogRoot,
     Trigger as DialogTrigger,
-} from '@radix-ui/react-dialog';
+} from '@kobalte/core/dialog';

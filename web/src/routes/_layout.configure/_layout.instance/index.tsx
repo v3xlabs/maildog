@@ -1,37 +1,36 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useCallback, useState } from 'react';
+import { createFileRoute, useNavigate } from '@tanstack/solid-router';
+import { createSignal } from 'solid-js';
 
-import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
-import { useInstanceConfig } from '../../../hooks/useInstanceConfig';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { setInstanceUrl } from '@/utils/instanceConfig';
 
 export const Route = createFileRoute('/_layout/configure/_layout/instance/')({
     component: () => {
-        const suggestedKeycloakUrl = (import.meta as any).env.VITE_INSTANCE_URL;
         const navigate = useNavigate();
-        const [temporaryInstanceUrl, setTemporaryInstanceUrl] =
-            useState(suggestedKeycloakUrl);
-        const { setInstanceUrl } = useInstanceConfig();
+        const [temporaryInstanceUrl, setTemporaryInstanceUrl] = createSignal(
+            import.meta.env.VITE_INSTANCE_URL ?? ''
+        );
 
-        const configure = useCallback(() => {
-            setInstanceUrl(temporaryInstanceUrl);
+        const configure = () => {
+            setInstanceUrl(temporaryInstanceUrl());
 
-            navigate({
+            void navigate({
                 to: '/configure/instance/healthcheck',
             });
-        }, []);
+        };
 
         return (
-            <div className="space-y-2 flex flex-col">
+            <div class="space-y-2 flex flex-col">
                 <Input
                     placeholder="http://localhost:5173"
                     aria-label="Instance URL"
-                    defaultValue={suggestedKeycloakUrl}
-                    onChange={(event) =>
-                        setTemporaryInstanceUrl(event.target.value)
+                    value={temporaryInstanceUrl()}
+                    onInput={(event) =>
+                        setTemporaryInstanceUrl(event.currentTarget.value)
                     }
                 />
-                <Button className="w-full" onClick={configure}>
+                <Button class="w-full" onClick={configure}>
                     Next
                 </Button>
             </div>

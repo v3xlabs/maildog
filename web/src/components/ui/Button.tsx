@@ -1,7 +1,7 @@
-import { Slot } from '@radix-ui/react-slot';
+import type { JSX } from '@solidjs/web';
 import { type VariantProps, cva } from 'class-variance-authority';
 import clsx from 'clsx';
-import { forwardRef } from 'react';
+import { omit } from 'solid-js';
 
 const buttonVariants = cva(
     'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
@@ -91,44 +91,25 @@ const buttonVariants = cva(
     }
 );
 
-export interface ButtonProperties
-    extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-        VariantProps<typeof buttonVariants> {
-    asChild?: boolean;
-}
+export type ButtonProperties = JSX.ButtonHTMLAttributes<HTMLButtonElement> &
+    VariantProps<typeof buttonVariants>;
 
-const Button = forwardRef<HTMLButtonElement, ButtonProperties>(
-    (
-        {
-            className,
-            variant,
-            size,
-            tone,
-            asChild = false,
-            disabled,
-            children,
-            ...properties
-        },
-        reference
-    ) => {
-        const Comp = asChild ? Slot : 'button';
+const Button = (props: ButtonProperties) => {
+    const properties = omit(props, 'class', 'variant', 'size', 'tone');
 
-        return (
-            <Comp
-                className={clsx(
-                    buttonVariants({ variant, size, tone }),
-                    className
-                )}
-                ref={reference}
-                disabled={disabled}
-                {...properties}
-            >
-                {children}
-            </Comp>
-        );
-    }
-);
-
-Button.displayName = 'Button';
+    return (
+        <button
+            class={clsx(
+                buttonVariants({
+                    variant: props.variant,
+                    size: props.size,
+                    tone: props.tone,
+                }),
+                props.class
+            )}
+            {...properties}
+        />
+    );
+};
 
 export { Button, buttonVariants };

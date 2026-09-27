@@ -8,43 +8,34 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/solid-router'
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LayoutRouteImport } from './routes/_layout'
-import { Route as LogoutLayoutRouteImport } from './routes/logout/_layout'
 import { Route as LoginLayoutRouteImport } from './routes/login/_layout'
-import { Route as LogoutLayoutIndexRouteImport } from './routes/logout/_layout.index'
-import { Route as LoginLayoutIndexRouteImport } from './routes/login/_layout.index'
-import { Route as LayoutSettingsIndexRouteImport } from './routes/_layout.settings/index'
-import { Route as LoginLayoutCallbackRouteImport } from './routes/login/_layout.callback'
+import { Route as LogoutLayoutRouteImport } from './routes/logout/_layout'
 import { Route as LayoutConfigureLayoutRouteImport } from './routes/_layout.configure/_layout'
+import { Route as LayoutSettingsIndexRouteImport } from './routes/_layout.settings/index'
+import { Route as LoginLayoutIndexRouteImport } from './routes/login/_layout.index'
+import { Route as LoginLayoutCallbackRouteImport } from './routes/login/_layout.callback'
+import { Route as LogoutLayoutIndexRouteImport } from './routes/logout/_layout.index'
 import { Route as LayoutConfigureLayoutIndexRouteImport } from './routes/_layout.configure/_layout.index'
 import { Route as LayoutConfigureLayoutInstanceIndexRouteImport } from './routes/_layout.configure/_layout.instance/index'
 import { Route as LayoutConfigureLayoutInstanceHealthcheckRouteImport } from './routes/_layout.configure/_layout.instance/healthcheck'
 
-const LogoutRouteImport = createFileRoute('/logout')()
-const LoginRouteImport = createFileRoute('/login')()
 const DebugLazyRouteImport = createFileRoute('/debug')()
-const LayoutConfigureRouteImport = createFileRoute('/_layout/configure')()
 const LayoutIndexLazyRouteImport = createFileRoute('/_layout/')()
 const LoginLayoutCreateLazyRouteImport = createFileRoute(
   '/login/_layout/create',
 )()
-const LayoutTTagIndexLazyRouteImport = createFileRoute('/_layout/t/$tag/')()
 const LayoutMMailIndexLazyRouteImport = createFileRoute('/_layout/m/$mail/')()
 const LayoutMMailImap_uidLazyRouteImport = createFileRoute(
   '/_layout/m/$mail/$imap_uid',
 )()
+const LayoutTTagIndexLazyRouteImport = createFileRoute('/_layout/t/$tag/')()
 
-const LogoutRoute = LogoutRouteImport.update({
-  id: '/logout',
-  path: '/logout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const LayoutRoute = LayoutRouteImport.update({
+  id: '/_layout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DebugLazyRoute = DebugLazyRouteImport.update({
@@ -52,42 +43,40 @@ const DebugLazyRoute = DebugLazyRouteImport.update({
   path: '/debug',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/debug.lazy').then((d) => d.Route))
-const LayoutRoute = LayoutRouteImport.update({
-  id: '/_layout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LayoutConfigureRoute = LayoutConfigureRouteImport.update({
-  id: '/configure',
-  path: '/configure',
-  getParentRoute: () => LayoutRoute,
-} as any)
 const LayoutIndexLazyRoute = LayoutIndexLazyRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => LayoutRoute,
 } as any).lazy(() => import('./routes/_layout.index.lazy').then((d) => d.Route))
-const LogoutLayoutRoute = LogoutLayoutRouteImport.update({
-  id: '/_layout',
-  getParentRoute: () => LogoutRoute,
-} as any)
 const LoginLayoutRoute = LoginLayoutRouteImport.update({
-  id: '/_layout',
-  getParentRoute: () => LoginRoute,
+  id: '/login/_layout',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const LogoutLayoutIndexRoute = LogoutLayoutIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => LogoutLayoutRoute,
+const LogoutLayoutRoute = LogoutLayoutRouteImport.update({
+  id: '/logout/_layout',
+  path: '/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LayoutConfigureLayoutRoute = LayoutConfigureLayoutRouteImport.update({
+  id: '/configure/_layout',
+  path: '/configure',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutSettingsIndexRoute = LayoutSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => LayoutRoute,
 } as any)
 const LoginLayoutIndexRoute = LoginLayoutIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => LoginLayoutRoute,
 } as any)
-const LayoutSettingsIndexRoute = LayoutSettingsIndexRouteImport.update({
-  id: '/settings/',
-  path: '/settings/',
-  getParentRoute: () => LayoutRoute,
+const LoginLayoutCallbackRoute = LoginLayoutCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => LoginLayoutRoute,
 } as any)
 const LoginLayoutCreateLazyRoute = LoginLayoutCreateLazyRouteImport.update({
   id: '/create',
@@ -96,22 +85,17 @@ const LoginLayoutCreateLazyRoute = LoginLayoutCreateLazyRouteImport.update({
 } as any).lazy(() =>
   import('./routes/login/_layout.create.lazy').then((d) => d.Route),
 )
-const LoginLayoutCallbackRoute = LoginLayoutCallbackRouteImport.update({
-  id: '/callback',
-  path: '/callback',
-  getParentRoute: () => LoginLayoutRoute,
+const LogoutLayoutIndexRoute = LogoutLayoutIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LogoutLayoutRoute,
 } as any)
-const LayoutConfigureLayoutRoute = LayoutConfigureLayoutRouteImport.update({
-  id: '/_layout',
-  getParentRoute: () => LayoutConfigureRoute,
-} as any)
-const LayoutTTagIndexLazyRoute = LayoutTTagIndexLazyRouteImport.update({
-  id: '/t/$tag/',
-  path: '/t/$tag/',
-  getParentRoute: () => LayoutRoute,
-} as any).lazy(() =>
-  import('./routes/_layout.t/$tag/index.lazy').then((d) => d.Route),
-)
+const LayoutConfigureLayoutIndexRoute =
+  LayoutConfigureLayoutIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => LayoutConfigureLayoutRoute,
+  } as any)
 const LayoutMMailIndexLazyRoute = LayoutMMailIndexLazyRouteImport.update({
   id: '/m/$mail/',
   path: '/m/$mail/',
@@ -119,18 +103,19 @@ const LayoutMMailIndexLazyRoute = LayoutMMailIndexLazyRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_layout.m/$mail/index.lazy').then((d) => d.Route),
 )
-const LayoutConfigureLayoutIndexRoute =
-  LayoutConfigureLayoutIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => LayoutConfigureLayoutRoute,
-  } as any)
 const LayoutMMailImap_uidLazyRoute = LayoutMMailImap_uidLazyRouteImport.update({
   id: '/m/$mail/$imap_uid',
   path: '/m/$mail/$imap_uid',
   getParentRoute: () => LayoutRoute,
 } as any).lazy(() =>
   import('./routes/_layout.m/$mail/$imap_uid.lazy').then((d) => d.Route),
+)
+const LayoutTTagIndexLazyRoute = LayoutTTagIndexLazyRouteImport.update({
+  id: '/t/$tag/',
+  path: '/t/$tag/',
+  getParentRoute: () => LayoutRoute,
+} as any).lazy(() =>
+  import('./routes/_layout.t/$tag/index.lazy').then((d) => d.Route),
 )
 const LayoutConfigureLayoutInstanceIndexRoute =
   LayoutConfigureLayoutInstanceIndexRouteImport.update({
@@ -146,33 +131,33 @@ const LayoutConfigureLayoutInstanceHealthcheckRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof LayoutIndexLazyRoute
   '/debug': typeof DebugLazyRoute
   '/login': typeof LoginLayoutRouteWithChildren
   '/logout': typeof LogoutLayoutRouteWithChildren
-  '/': typeof LayoutIndexLazyRoute
   '/configure': typeof LayoutConfigureLayoutRouteWithChildren
   '/login/callback': typeof LoginLayoutCallbackRoute
   '/login/create': typeof LoginLayoutCreateLazyRoute
-  '/settings': typeof LayoutSettingsIndexRoute
+  '/settings/': typeof LayoutSettingsIndexRoute
   '/login/': typeof LoginLayoutIndexRoute
   '/logout/': typeof LogoutLayoutIndexRoute
   '/m/$mail/$imap_uid': typeof LayoutMMailImap_uidLazyRoute
   '/configure/': typeof LayoutConfigureLayoutIndexRoute
-  '/m/$mail': typeof LayoutMMailIndexLazyRoute
-  '/t/$tag': typeof LayoutTTagIndexLazyRoute
+  '/m/$mail/': typeof LayoutMMailIndexLazyRoute
+  '/t/$tag/': typeof LayoutTTagIndexLazyRoute
   '/configure/instance/healthcheck': typeof LayoutConfigureLayoutInstanceHealthcheckRoute
-  '/configure/instance': typeof LayoutConfigureLayoutInstanceIndexRoute
+  '/configure/instance/': typeof LayoutConfigureLayoutInstanceIndexRoute
 }
 export interface FileRoutesByTo {
   '/debug': typeof DebugLazyRoute
-  '/login': typeof LoginLayoutIndexRoute
-  '/logout': typeof LogoutLayoutIndexRoute
   '/': typeof LayoutIndexLazyRoute
-  '/configure': typeof LayoutConfigureLayoutIndexRoute
   '/login/callback': typeof LoginLayoutCallbackRoute
   '/login/create': typeof LoginLayoutCreateLazyRoute
   '/settings': typeof LayoutSettingsIndexRoute
+  '/login': typeof LoginLayoutIndexRoute
+  '/logout': typeof LogoutLayoutIndexRoute
   '/m/$mail/$imap_uid': typeof LayoutMMailImap_uidLazyRoute
+  '/configure': typeof LayoutConfigureLayoutIndexRoute
   '/m/$mail': typeof LayoutMMailIndexLazyRoute
   '/t/$tag': typeof LayoutTTagIndexLazyRoute
   '/configure/instance/healthcheck': typeof LayoutConfigureLayoutInstanceHealthcheckRoute
@@ -182,12 +167,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_layout': typeof LayoutRouteWithChildren
   '/debug': typeof DebugLazyRoute
-  '/login': typeof LoginRouteWithChildren
   '/login/_layout': typeof LoginLayoutRouteWithChildren
-  '/logout': typeof LogoutRouteWithChildren
   '/logout/_layout': typeof LogoutLayoutRouteWithChildren
   '/_layout/': typeof LayoutIndexLazyRoute
-  '/_layout/configure': typeof LayoutConfigureRouteWithChildren
   '/_layout/configure/_layout': typeof LayoutConfigureLayoutRouteWithChildren
   '/login/_layout/callback': typeof LoginLayoutCallbackRoute
   '/login/_layout/create': typeof LoginLayoutCreateLazyRoute
@@ -204,33 +186,33 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/debug'
     | '/login'
     | '/logout'
-    | '/'
     | '/configure'
     | '/login/callback'
     | '/login/create'
-    | '/settings'
+    | '/settings/'
     | '/login/'
     | '/logout/'
     | '/m/$mail/$imap_uid'
     | '/configure/'
-    | '/m/$mail'
-    | '/t/$tag'
+    | '/m/$mail/'
+    | '/t/$tag/'
     | '/configure/instance/healthcheck'
-    | '/configure/instance'
+    | '/configure/instance/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/debug'
-    | '/login'
-    | '/logout'
     | '/'
-    | '/configure'
     | '/login/callback'
     | '/login/create'
     | '/settings'
+    | '/login'
+    | '/logout'
     | '/m/$mail/$imap_uid'
+    | '/configure'
     | '/m/$mail'
     | '/t/$tag'
     | '/configure/instance/healthcheck'
@@ -239,12 +221,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_layout'
     | '/debug'
-    | '/login'
     | '/login/_layout'
-    | '/logout'
     | '/logout/_layout'
     | '/_layout/'
-    | '/_layout/configure'
     | '/_layout/configure/_layout'
     | '/login/_layout/callback'
     | '/login/_layout/create'
@@ -262,24 +241,17 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   LayoutRoute: typeof LayoutRouteWithChildren
   DebugLazyRoute: typeof DebugLazyRoute
-  LoginRoute: typeof LoginRouteWithChildren
-  LogoutRoute: typeof LogoutRouteWithChildren
+  LoginLayoutRoute: typeof LoginLayoutRouteWithChildren
+  LogoutLayoutRoute: typeof LogoutLayoutRouteWithChildren
 }
 
-declare module '@tanstack/react-router' {
+declare module '@tanstack/solid-router' {
   interface FileRoutesByPath {
-    '/logout': {
-      id: '/logout'
-      path: '/logout'
-      fullPath: '/logout'
-      preLoaderRoute: typeof LogoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/_layout': {
+      id: '/_layout'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof LayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/debug': {
@@ -289,20 +261,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DebugLazyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_layout': {
-      id: '/_layout'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof LayoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_layout/configure': {
-      id: '/_layout/configure'
-      path: '/configure'
-      fullPath: '/configure'
-      preLoaderRoute: typeof LayoutConfigureRouteImport
-      parentRoute: typeof LayoutRoute
-    }
     '/_layout/': {
       id: '/_layout/'
       path: '/'
@@ -310,46 +268,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexLazyRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/logout/_layout': {
-      id: '/logout/_layout'
-      path: '/logout'
-      fullPath: '/logout'
-      preLoaderRoute: typeof LogoutLayoutRouteImport
-      parentRoute: typeof LogoutRoute
-    }
     '/login/_layout': {
       id: '/login/_layout'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginLayoutRouteImport
-      parentRoute: typeof LoginRoute
+      parentRoute: typeof rootRouteImport
     }
-    '/logout/_layout/': {
-      id: '/logout/_layout/'
-      path: '/'
-      fullPath: '/logout/'
-      preLoaderRoute: typeof LogoutLayoutIndexRouteImport
-      parentRoute: typeof LogoutLayoutRoute
+    '/logout/_layout': {
+      id: '/logout/_layout'
+      path: '/logout'
+      fullPath: '/logout'
+      preLoaderRoute: typeof LogoutLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_layout/configure/_layout': {
+      id: '/_layout/configure/_layout'
+      path: '/configure'
+      fullPath: '/configure'
+      preLoaderRoute: typeof LayoutConfigureLayoutRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/settings/': {
+      id: '/_layout/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof LayoutSettingsIndexRouteImport
+      parentRoute: typeof LayoutRoute
     }
     '/login/_layout/': {
       id: '/login/_layout/'
       path: '/'
       fullPath: '/login/'
       preLoaderRoute: typeof LoginLayoutIndexRouteImport
-      parentRoute: typeof LoginLayoutRoute
-    }
-    '/_layout/settings/': {
-      id: '/_layout/settings/'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof LayoutSettingsIndexRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/login/_layout/create': {
-      id: '/login/_layout/create'
-      path: '/create'
-      fullPath: '/login/create'
-      preLoaderRoute: typeof LoginLayoutCreateLazyRouteImport
       parentRoute: typeof LoginLayoutRoute
     }
     '/login/_layout/callback': {
@@ -359,26 +310,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginLayoutCallbackRouteImport
       parentRoute: typeof LoginLayoutRoute
     }
-    '/_layout/configure/_layout': {
-      id: '/_layout/configure/_layout'
-      path: '/configure'
-      fullPath: '/configure'
-      preLoaderRoute: typeof LayoutConfigureLayoutRouteImport
-      parentRoute: typeof LayoutConfigureRoute
+    '/login/_layout/create': {
+      id: '/login/_layout/create'
+      path: '/create'
+      fullPath: '/login/create'
+      preLoaderRoute: typeof LoginLayoutCreateLazyRouteImport
+      parentRoute: typeof LoginLayoutRoute
     }
-    '/_layout/t/$tag/': {
-      id: '/_layout/t/$tag/'
-      path: '/t/$tag'
-      fullPath: '/t/$tag'
-      preLoaderRoute: typeof LayoutTTagIndexLazyRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/m/$mail/': {
-      id: '/_layout/m/$mail/'
-      path: '/m/$mail'
-      fullPath: '/m/$mail'
-      preLoaderRoute: typeof LayoutMMailIndexLazyRouteImport
-      parentRoute: typeof LayoutRoute
+    '/logout/_layout/': {
+      id: '/logout/_layout/'
+      path: '/'
+      fullPath: '/logout/'
+      preLoaderRoute: typeof LogoutLayoutIndexRouteImport
+      parentRoute: typeof LogoutLayoutRoute
     }
     '/_layout/configure/_layout/': {
       id: '/_layout/configure/_layout/'
@@ -387,6 +331,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutConfigureLayoutIndexRouteImport
       parentRoute: typeof LayoutConfigureLayoutRoute
     }
+    '/_layout/m/$mail/': {
+      id: '/_layout/m/$mail/'
+      path: '/m/$mail'
+      fullPath: '/m/$mail/'
+      preLoaderRoute: typeof LayoutMMailIndexLazyRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/m/$mail/$imap_uid': {
       id: '/_layout/m/$mail/$imap_uid'
       path: '/m/$mail/$imap_uid'
@@ -394,10 +345,17 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutMMailImap_uidLazyRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/t/$tag/': {
+      id: '/_layout/t/$tag/'
+      path: '/t/$tag'
+      fullPath: '/t/$tag/'
+      preLoaderRoute: typeof LayoutTTagIndexLazyRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/configure/_layout/instance/': {
       id: '/_layout/configure/_layout/instance/'
       path: '/instance'
-      fullPath: '/configure/instance'
+      fullPath: '/configure/instance/'
       preLoaderRoute: typeof LayoutConfigureLayoutInstanceIndexRouteImport
       parentRoute: typeof LayoutConfigureLayoutRoute
     }
@@ -430,21 +388,9 @@ const LayoutConfigureLayoutRouteWithChildren =
     LayoutConfigureLayoutRouteChildren,
   )
 
-interface LayoutConfigureRouteChildren {
-  LayoutConfigureLayoutRoute: typeof LayoutConfigureLayoutRouteWithChildren
-}
-
-const LayoutConfigureRouteChildren: LayoutConfigureRouteChildren = {
-  LayoutConfigureLayoutRoute: LayoutConfigureLayoutRouteWithChildren,
-}
-
-const LayoutConfigureRouteWithChildren = LayoutConfigureRoute._addFileChildren(
-  LayoutConfigureRouteChildren,
-)
-
 interface LayoutRouteChildren {
   LayoutIndexLazyRoute: typeof LayoutIndexLazyRoute
-  LayoutConfigureRoute: typeof LayoutConfigureRouteWithChildren
+  LayoutConfigureLayoutRoute: typeof LayoutConfigureLayoutRouteWithChildren
   LayoutSettingsIndexRoute: typeof LayoutSettingsIndexRoute
   LayoutMMailImap_uidLazyRoute: typeof LayoutMMailImap_uidLazyRoute
   LayoutMMailIndexLazyRoute: typeof LayoutMMailIndexLazyRoute
@@ -453,7 +399,7 @@ interface LayoutRouteChildren {
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutIndexLazyRoute: LayoutIndexLazyRoute,
-  LayoutConfigureRoute: LayoutConfigureRouteWithChildren,
+  LayoutConfigureLayoutRoute: LayoutConfigureLayoutRouteWithChildren,
   LayoutSettingsIndexRoute: LayoutSettingsIndexRoute,
   LayoutMMailImap_uidLazyRoute: LayoutMMailImap_uidLazyRoute,
   LayoutMMailIndexLazyRoute: LayoutMMailIndexLazyRoute,
@@ -479,16 +425,6 @@ const LoginLayoutRouteWithChildren = LoginLayoutRoute._addFileChildren(
   LoginLayoutRouteChildren,
 )
 
-interface LoginRouteChildren {
-  LoginLayoutRoute: typeof LoginLayoutRouteWithChildren
-}
-
-const LoginRouteChildren: LoginRouteChildren = {
-  LoginLayoutRoute: LoginLayoutRouteWithChildren,
-}
-
-const LoginRouteWithChildren = LoginRoute._addFileChildren(LoginRouteChildren)
-
 interface LogoutLayoutRouteChildren {
   LogoutLayoutIndexRoute: typeof LogoutLayoutIndexRoute
 }
@@ -501,22 +437,11 @@ const LogoutLayoutRouteWithChildren = LogoutLayoutRoute._addFileChildren(
   LogoutLayoutRouteChildren,
 )
 
-interface LogoutRouteChildren {
-  LogoutLayoutRoute: typeof LogoutLayoutRouteWithChildren
-}
-
-const LogoutRouteChildren: LogoutRouteChildren = {
-  LogoutLayoutRoute: LogoutLayoutRouteWithChildren,
-}
-
-const LogoutRouteWithChildren =
-  LogoutRoute._addFileChildren(LogoutRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   LayoutRoute: LayoutRouteWithChildren,
   DebugLazyRoute: DebugLazyRoute,
-  LoginRoute: LoginRouteWithChildren,
-  LogoutRoute: LogoutRouteWithChildren,
+  LoginLayoutRoute: LoginLayoutRouteWithChildren,
+  LogoutLayoutRoute: LogoutLayoutRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

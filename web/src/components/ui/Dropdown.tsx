@@ -1,52 +1,32 @@
-import {
-    Content,
-    Item,
-    SubTrigger,
-    Trigger,
-} from '@radix-ui/react-dropdown-menu';
+import { Content, Item } from '@kobalte/core/dropdown-menu';
 import clsx from 'clsx';
-import { ComponentPropsWithoutRef, ElementRef, forwardRef } from 'react';
+import { ComponentProps, omit } from 'solid-js';
 
-
-export const DropdownTrigger = Trigger;
-
-export const DropdownContent = forwardRef<
-    ElementRef<typeof Content>,
-    ComponentPropsWithoutRef<typeof Content>
->(({ className, children, ...properties }, reference) => (
+export const DropdownContent = (properties: ComponentProps<typeof Content>) => (
     <Content
-        ref={reference}
-        className={clsx(
-            className,
+        class={clsx(
+            properties.class,
             'bg-card border border-card-border w-full rounded-sm'
         )}
-        {...properties}
-    >
-        {children}
-    </Content>
-));
+        {...omit(properties, 'class')}
+    />
+);
 
-export const DropdownItem = forwardRef<
-    ElementRef<typeof Item>,
-    ComponentPropsWithoutRef<typeof Item>
->(({ className, children, ...properties }, reference) => (
+export const DropdownItem = (properties: ComponentProps<typeof Item>) => (
     <Item
-        ref={reference}
-        className={clsx(
+        class={clsx(
             'flex items-center gap-2 px-2 py-1.5 text-sm text-text-primary hover:bg-surface-primary cursor-pointer',
-            className || ''
+            properties.class
         )}
-        {...properties}
-    >
-        {children}
-    </Item>
-));
-
-export const DropdownSubTrigger = SubTrigger;
+        {...omit(properties, 'class')}
+    />
+);
 
 export {
     Portal as DropdownPortal,
     Root as DropdownRoot,
     Sub as DropdownSub,
     SubContent as DropdownSubContent,
-} from '@radix-ui/react-dropdown-menu';
+    SubTrigger as DropdownSubTrigger,
+    Trigger as DropdownTrigger,
+} from '@kobalte/core/dropdown-menu';

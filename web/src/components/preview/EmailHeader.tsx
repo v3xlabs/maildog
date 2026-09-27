@@ -1,30 +1,20 @@
-import { LuLink, LuMail, LuMailQuestion } from 'react-icons/lu';
+import LinkIcon from '~icons/lucide/link';
+import MailIcon from '~icons/lucide/mail';
+import MailQuestionIcon from '~icons/lucide/mail-question';
+import { createMemo, For, Show } from 'solid-js';
 import { match } from 'ts-pattern';
 
 import { EmailResponse } from '@/api';
 import { extractMail, parseListUnsubscribe } from '@/utils/mail/mail';
 
-import { Button } from '../ui/Button';
+import { buttonVariants } from '../ui/Button';
 import {
     DropdownContent,
-    DropdownItem,
     DropdownPortal,
     DropdownRoot,
     DropdownTrigger,
 } from '../ui/Dropdown';
 import { ExternalLink } from '../ui/ExternalLink';
-
-const extractName = (emailAddr: string | undefined) => {
-    if (!emailAddr) return 'Unknown';
-
-    const parts = emailAddr.split('<');
-
-    if (parts.length > 1 && parts[0]) {
-        return parts[0].trim();
-    }
-
-    return emailAddr;
-};
 
 const extractEmail = (email: string | undefined) => {
     if (!email) return;
@@ -34,139 +24,139 @@ const extractEmail = (email: string | undefined) => {
     return match?.[1];
 };
 
-export const EmailPreviewHeader = ({ email }: { email: EmailResponse }) => {
-    const senderEmail = extractEmail(email.from_address) || email.from_address;
-    const toEmail = extractEmail(email.to_address) || email.to_address;
+export const EmailPreviewHeader = (props: { email: EmailResponse }) => {
+    const senderEmail = () =>
+        extractEmail(props.email.from_address) || props.email.from_address;
+    const toEmail = () =>
+        extractEmail(props.email.to_address) || props.email.to_address;
 
-    const data = extractMail(email.raw_message || '');
-    const hasUnsubscribe = data.headers['list-unsubscribe'];
-    const unsubscribe = hasUnsubscribe
-        ? parseListUnsubscribe(hasUnsubscribe)
-        : null;
+    const data = createMemo(() => extractMail(props.email.raw_message || ''));
+    const unsubscribeHeader = () => data().headers['list-unsubscribe'];
+    const unsubscribe = createMemo(() => {
+        const header = unsubscribeHeader();
+
+        return header ? parseListUnsubscribe(header) : [];
+    });
 
     return (
-        <div className="space-y-3">
-            <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                    {email.from_address?.charAt(0).toUpperCase() || '?'}
+        <div class="space-y-3">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                    {props.email.from_address?.charAt(0).toUpperCase() || '?'}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div class="flex-1 min-w-0">
                     <div
-                        className="flex items-baseline gap-2 flex-wrap"
-                        title={email.from_address}
+                        class="flex items-baseline gap-2 flex-wrap"
+                        title={props.email.from_address}
                     >
-                        {senderEmail}
+                        {senderEmail()}
                     </div>
-                    {data.headers['sender'] && (
-                        <div
-                            className="text-sm text-gray-600 mt-1"
-                            title={data.headers['sender']}
-                        >
-                            sent by {data.headers['sender']}
-                        </div>
-                    )}
-                    {email.to_address && (
-                        <div
-                            className="text-sm text-gray-600 mt-1"
-                            title={email.to_address}
-                        >
-                            to {toEmail}
-                        </div>
-                    )}
-                    {data.headers['reply-to'] && (
-                        <div
-                            className="text-sm text-gray-600 mt-1"
-                            title={data.headers['reply-to']}
-                        >
-                            reply-to {data.headers['reply-to']}
-                        </div>
-                    )}
+                    <Show when={data().headers['sender']}>
+                        {(sender) => (
+                            <div class="text-sm text-gray-600 mt-1" title={sender()}>
+                                sent by {sender()}
+                            </div>
+                        )}
+                    </Show>
+                    <Show when={props.email.to_address}>
+                        {(toAddress) => (
+                            <div
+                                class="text-sm text-gray-600 mt-1"
+                                title={toAddress()}
+                            >
+                                to {toEmail()}
+                            </div>
+                        )}
+                    </Show>
+                    <Show when={data().headers['reply-to']}>
+                        {(replyTo) => (
+                            <div class="text-sm text-gray-600 mt-1" title={replyTo()}>
+                                reply-to {replyTo()}
+                            </div>
+                        )}
+                    </Show>
                 </div>
-                <div className="flex flex-col items-end">
-                    <div className="text-sm text-gray-500">
-                        {email.date_sent &&
-                            new Date(email.date_sent).toLocaleString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                            })}
+                <div class="flex flex-col items-end">
+                    <div class="text-sm text-gray-500">
+                        <Show when={props.email.date_sent}>
+                            {(dateSent) =>
+                                new Date(dateSent()).toLocaleString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                })
+                            }
+                        </Show>
                     </div>
-                    {hasUnsubscribe && (
+                    <Show when={unsubscribeHeader()}>
                         <DropdownRoot>
-                            <DropdownTrigger asChild>
-                                <Button variant="outline">Unsubscribe</Button>
+                            <DropdownTrigger
+                                class={buttonVariants({ variant: 'outline' })}
+                            >
+                                Unsubscribe
                             </DropdownTrigger>
                             <DropdownPortal>
                                 <DropdownContent>
-                                    {unsubscribe &&
-                                        unsubscribe.map(
-                                            (item) =>
-                                                item && (
-                                                    <div
-                                                        key={item.raw}
-                                                    >
-                                                        {match(item.kind)
-                                                            .with(
-                                                                'mailto',
-                                                                () => (
-                                                                    <ExternalLink
-                                                                        href={
-                                                                            item.raw
-                                                                        }
-                                                                        className="flex items-center gap-1 px-4 py-1"
-                                                                    >
-                                                                        <LuMail />{' '}
-                                                                        via mail
-                                                                    </ExternalLink>
-                                                                )
-                                                            )
+                                    <For each={unsubscribe()}>
+                                        {(item) => (
+                                            <Show when={item}>
+                                                {(entry) => (
+                                                    <div>
+                                                        {match(entry().kind)
+                                                            .with('mailto', () => (
+                                                                <ExternalLink
+                                                                    href={entry().raw}
+                                                                    class="flex items-center gap-1 px-4 py-1"
+                                                                >
+                                                                    <MailIcon /> via
+                                                                    mail
+                                                                </ExternalLink>
+                                                            ))
                                                             .with('url', () => (
                                                                 <ExternalLink
-                                                                    href={
-                                                                        item.url ||
-                                                                        ''
-                                                                    }
-                                                                    className="flex items-center gap-1 px-4 py-1"
+                                                                    href={entry().url || ''}
+                                                                    class="flex items-center gap-1 px-4 py-1"
                                                                 >
-                                                                    <LuLink />
+                                                                    <LinkIcon />
                                                                     via url
                                                                 </ExternalLink>
                                                             ))
                                                             .otherwise(() => (
                                                                 <a
-                                                                    href={
-                                                                        item.raw
-                                                                    }
+                                                                    href={entry().raw}
                                                                     target="_blank"
-                                                                    className="flex items-center gap-1 px-4 py-1"
+                                                                    class="flex items-center gap-1 px-4 py-1"
                                                                 >
-                                                                    <LuMailQuestion />
-                                                                    unknown
-                                                                    option
+                                                                    <MailQuestionIcon />
+                                                                    unknown option
                                                                 </a>
                                                             ))}
                                                     </div>
-                                                )
+                                                )}
+                                            </Show>
                                         )}
+                                    </For>
                                 </DropdownContent>
                             </DropdownPortal>
                         </DropdownRoot>
-                    )}
+                    </Show>
                 </div>
             </div>
             <ul>
-                {data.parts.map((part, index) => (
-                    <li key={index}>
-                        <div className="px-1 overflow-x-auto border">
-                            {part.contentType}
-                        </div>
-                    </li>
-                ))}
+                <For each={data().parts}>
+                    {(part) => (
+                        <li>
+                            <div class="px-1 overflow-x-auto border">
+                                {part.contentType}
+                            </div>
+                        </li>
+                    )}
+                </For>
             </ul>
-            <pre className="overflow-x-scroll border">
-                {JSON.stringify(data, null, 2)}
+            <pre class="overflow-x-scroll border">
+                {JSON.stringify(data(), null, 2)}
             </pre>
         </div>
     );

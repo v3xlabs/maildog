@@ -317,25 +317,23 @@ impl ImapConfig {
         use sha2::{Digest, Sha256};
 
         // The encrypted data format is: [12-byte nonce][ciphertext]
-        if self.password_encrypted.len() < 12 {
-            return Err(sqlx::Error::Decode("Encrypted data too short".into()));
-        }
+        let (nonce_bytes, ciphertext) = self
+            .password_encrypted
+            .split_first_chunk::<12>()
+            .ok_or_else(|| sqlx::Error::Decode("Encrypted data too short".into()))?;
+        let nonce = Nonce::from(*nonce_bytes);
 
         // Derive a 32-byte key from the passphrase using SHA-256
         let mut hasher = Sha256::new();
         hasher.update(passphrase.as_bytes());
         let key_bytes = hasher.finalize();
 
-        // Split nonce and ciphertext
-        let (nonce_bytes, ciphertext) = self.password_encrypted.split_at(12);
-        let nonce = Nonce::from_slice(nonce_bytes);
-
         // Decrypt
         let cipher = Aes256Gcm::new_from_slice(&key_bytes)
             .map_err(|e| sqlx::Error::Decode(format!("Invalid key: {}", e).into()))?;
 
         let plaintext = cipher
-            .decrypt(nonce, ciphertext)
+            .decrypt(&nonce, ciphertext)
             .map_err(|e| sqlx::Error::Decode(format!("Decryption failed: {}", e).into()))?;
 
         String::from_utf8(plaintext).map_err(|e| sqlx::Error::Decode(Box::new(e)))
@@ -344,10 +342,9 @@ impl ImapConfig {
     /// Encrypt a password using the provided passphrase
     pub fn encrypt_password(password: &str, passphrase: &str) -> Vec<u8> {
         use aes_gcm::{
-            aead::{Aead, KeyInit, OsRng},
+            aead::{Aead, KeyInit},
             Aes256Gcm, Nonce,
         };
-        use rand::RngCore;
         use sha2::{Digest, Sha256};
 
         // Derive a 32-byte key from the passphrase using SHA-256
@@ -355,21 +352,18 @@ impl ImapConfig {
         hasher.update(passphrase.as_bytes());
         let key_bytes = hasher.finalize();
 
-        // Generate a random 12-byte nonce
-        let mut nonce_bytes = [0u8; 12];
-        OsRng.fill_bytes(&mut nonce_bytes);
-        let nonce = Nonce::from_slice(&nonce_bytes);
+        let nonce = Nonce::from(rand::random::<[u8; 12]>());
 
         // Encrypt
         let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("Invalid key length");
 
         let ciphertext = cipher
-            .encrypt(nonce, password.as_bytes())
+            .encrypt(&nonce, password.as_bytes())
             .expect("Encryption failed");
 
         // Return [nonce || ciphertext]
-        let mut result = Vec::with_capacity(12 + ciphertext.len());
-        result.extend_from_slice(&nonce_bytes);
+        let mut result = Vec::with_capacity(nonce.len() + ciphertext.len());
+        result.extend_from_slice(&nonce);
         result.extend_from_slice(&ciphertext);
         result
     }
