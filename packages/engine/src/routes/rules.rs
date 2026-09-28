@@ -3,7 +3,7 @@ use std::sync::Arc;
 use poem::http::StatusCode;
 use poem::web::Data;
 use poem::{Error, Result as PoemResult};
-use poem_openapi::{param::Path, payload::Json, Object, OpenApi};
+use poem_openapi::{param::{Path, Query}, payload::Json, Object, OpenApi};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -188,14 +188,15 @@ impl RuleApi {
         }))
     }
 
-    /// Manually categorize a specific email by IMAP UID
+    /// Manually categorize an email within an IMAP configuration.
     #[oai(path = "/emails/:uid/categorize", method = "post", tag = "crate::routes::ApiTags::Rules")]
     async fn categorize_email(
         &self,
         state: Data<&Arc<AppState>>,
         uid: Path<i64>,
+        imap_config_id: Query<i64>,
     ) -> PoemResult<Json<CategorizeResponse>> {
-        let actions = crate::rules::apply::categorize_email(&state.db_pool, uid.0)
+        let actions = crate::rules::apply::categorize_email(&state.db_pool, uid.0, imap_config_id.0)
             .await
             .map_err(internal_error)?;
 

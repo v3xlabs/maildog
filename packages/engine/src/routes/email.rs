@@ -425,42 +425,37 @@ impl EmailApi {
             .rows_affected();
 
         // Get all email UIDs to reprocess
-        let email_uids_query = if let Some(config_id) = imap_config_id.0 {
-            sqlx::query_scalar::<_, i64>("SELECT imap_uid FROM emails WHERE imap_config_id = ?")
-                .bind(config_id)
-        } else {
-            sqlx::query_scalar::<_, i64>("SELECT imap_uid FROM emails")
-        };
+        let email_ids: Vec<(i64, i64)> = sqlx::query_as(
+            "SELECT imap_uid, imap_config_id FROM emails
+             WHERE (? IS NULL OR imap_config_id = ?)",
+        )
+        .bind(imap_config_id.0)
+        .bind(imap_config_id.0)
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to fetch email IDs: {:?}", e);
+            poem::Error::from_string(
+                "Failed to fetch email IDs",
+                poem::http::StatusCode::INTERNAL_SERVER_ERROR,
+            )
+        })?;
 
-        let email_uids: Vec<i64> = email_uids_query
-            .fetch_all(&state.db_pool)
-            .await
-            .map_err(|e| {
-                tracing::error!("Failed to fetch email UIDs: {:?}", e);
-                poem::Error::from_string(
-                    "Failed to fetch email UIDs",
-                    poem::http::StatusCode::INTERNAL_SERVER_ERROR,
-                )
-            })?;
-
-        let total_emails = email_uids.len();
+        let total_emails = email_ids.len();
         let mut processed_count = 0;
         let mut failed_count = 0;
-
-        // Process emails in batches to avoid overwhelming the system
         let batch_size = 100;
-        for batch in email_uids.chunks(batch_size) {
-            for &email_uid in batch {
-                match categorize_email(&state.db_pool, email_uid).await {
+        for batch in email_ids.chunks(batch_size) {
+            for &(email_uid, config_id) in batch {
+                match categorize_email(&state.db_pool, email_uid, config_id).await {
                     Ok(_) => processed_count += 1,
                     Err(e) => {
-                        tracing::warn!("Failed to reindex email {}: {:?}", email_uid, e);
+                        tracing::warn!("Failed to reindex email {} for config {}: {:?}", email_uid, config_id, e);
                         failed_count += 1;
                     }
                 }
             }
-            
-            // Add a small delay between batches to prevent system overload
+
             tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
         }
 

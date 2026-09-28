@@ -9,19 +9,8 @@ import { toast } from 'sonner';
 import { useApi } from './api';
 import { components } from './schema.gen';
 
-// Extend the generated types to include category field
-export type PageResponse = components['schemas']['PageResponse'] & {
-    category?: string;
-};
+export type PageResponse = components['schemas']['PageResponse'];
 export type PageListResponse = components['schemas']['PageListResponse'];
-export type CreatePageRequest = Omit<components['schemas']['CreatePageRequest'], 'position'> & {
-    category?: string;
-    position?: number;
-};
-export type UpdatePageRequest = Omit<components['schemas']['UpdatePageRequest'], 'position'> & {
-    category?: string;
-    position?: number;
-};
 export type PageMessageResponse = components['schemas']['PageMessageResponse'];
 
 export const getPage = (pageSlug: string) =>
@@ -31,6 +20,7 @@ export const getPage = (pageSlug: string) =>
             const response = await useApi('/pages/detail/{slug}', 'get', {
                 path: { slug: pageSlug },
             });
+
             return response.data;
         },
     });
@@ -44,11 +34,13 @@ export const getPageBySlug = (userId: string, slug: string) =>
             const response = await useApi('/pages/detail/{slug}', 'get', {
                 path: { slug },
             });
+
             return response.data;
         },
     });
 
-export const usePageBySlug = (userId: string, slug: string) => useQuery(getPageBySlug(userId, slug));
+export const usePageBySlug = (userId: string, slug: string) =>
+    useQuery(getPageBySlug(userId, slug));
 
 export const getPages = (userId: string) =>
     queryOptions({
@@ -57,6 +49,7 @@ export const getPages = (userId: string) =>
             const response = await useApi('/pages/{user_id}', 'get', {
                 path: { user_id: userId },
             });
+
             return response.data;
         },
     });
@@ -67,28 +60,39 @@ export const getCategories = (userId: string) =>
     queryOptions({
         queryKey: ['pages', 'categories', userId],
         queryFn: async (): Promise<{ categories: string[] }> => {
-            const response = await useApi('/pages/{user_id}/categories', 'get', {
-                path: { user_id: userId },
-            });
+            const response = await useApi(
+                '/pages/{user_id}/categories',
+                'get',
+                {
+                    path: { user_id: userId },
+                }
+            );
+
             return response.data;
         },
     });
 
-export const useCategories = (userId: string) => useQuery(getCategories(userId));
+export const useCategories = (userId: string) =>
+    useQuery(getCategories(userId));
 
 export const useCreatePage = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (formData: CreatePageRequest) => {
+        mutationFn: async (
+            formData: components['schemas']['CreatePageRequest']
+        ) => {
             const response = await useApi('/pages', 'post', {
                 contentType: 'application/json; charset=utf-8',
                 data: formData,
             });
+
             return response.data;
         },
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['pages', variables.user_id] });
+            queryClient.invalidateQueries({
+                queryKey: ['pages', variables.user_id],
+            });
             toast.success('Page created successfully');
         },
         onError: () => {
@@ -102,6 +106,7 @@ export const useUpdatePage = () => {
 
     return useMutation({
         mutationFn: async (formData: {
+            original_slug: string;
             slug: string;
             user_id: string;
             name: string;
@@ -109,7 +114,7 @@ export const useUpdatePage = () => {
             config: string;
             category?: string;
         }) => {
-            const data: UpdatePageRequest = {
+            const data: components['schemas']['UpdatePageRequest'] = {
                 name: formData.name,
                 slug: formData.slug,
                 page_type: formData.page_type,
@@ -118,14 +123,17 @@ export const useUpdatePage = () => {
             };
 
             const response = await useApi('/pages/{slug}', 'put', {
-                path: { slug: formData.slug },
+                path: { slug: formData.original_slug },
                 contentType: 'application/json; charset=utf-8',
                 data: data,
             });
+
             return response.data;
         },
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['pages', variables.user_id] });
+            queryClient.invalidateQueries({
+                queryKey: ['pages', variables.user_id],
+            });
             toast.success('Page updated successfully');
         },
         onError: () => {
@@ -138,14 +146,23 @@ export const useDeletePage = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ slug, userId }: { slug: string; userId: string }) => {
+        mutationFn: async ({
+            slug,
+            userId,
+        }: {
+            slug: string;
+            userId: string;
+        }) => {
             const response = await useApi('/pages/{slug}', 'delete', {
                 path: { slug },
             });
+
             return response.data;
         },
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['pages', variables.userId] });
+            queryClient.invalidateQueries({
+                queryKey: ['pages', variables.userId],
+            });
             toast.success('Page deleted successfully');
         },
         onError: () => {

@@ -1,3 +1,29 @@
+ALTER TABLE emails ADD COLUMN category TEXT;
+ALTER TABLE emails ADD COLUMN labels TEXT;
+ALTER TABLE emails ADD COLUMN priority INTEGER DEFAULT 5;
+
+CREATE INDEX IF NOT EXISTS idx_emails_category ON emails(category);
+CREATE INDEX IF NOT EXISTS idx_emails_priority ON emails(priority DESC);
+
+CREATE VIEW IF NOT EXISTS emails_categorized AS
+SELECT
+    e.*,
+    CASE WHEN e.category IS NOT NULL THEN 1 ELSE 0 END AS is_categorized
+FROM emails e;
+
+CREATE TABLE IF NOT EXISTS email_rules (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    rule_json TEXT NOT NULL,
+    priority INTEGER DEFAULT 0,
+    enabled BOOLEAN DEFAULT TRUE,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_rules_priority ON email_rules(priority DESC, created_at);
+CREATE INDEX IF NOT EXISTS idx_email_rules_enabled ON email_rules(enabled);
+
 CREATE TABLE IF NOT EXISTS pages (
     slug TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -129,7 +155,7 @@ VALUES
     (
         'junk-spam',
         'Junk and Spam Detection',
-        '{"id":"junk-spam","name":"Junk and Spam Detection","condition":{"type":"or","conditions":[{"type":"headerContains","name":"subject","substring":"make money fast"},{"type":"headerContains","name":"subject","substring":"click here"},{"type":"headerContains","name":"subject","substring":"congratulations"},{"type":"headerMatches","name":"subject","pattern":"^RE:.*RE:.*RE:"},{"type":"headerContains","name":"from","substring":"noreply@suspicious"},{"type":"not","condition":{"type":"headerContains","name":"received","substring":"trusted-domain.com"}}]},"actions":[{"type":"addLabel","value":"junk"},{"type":"setPriority","value":1}],"priority":10,"enabled":true}',
+        '{"id":"junk-spam","name":"Junk and Spam Detection","condition":{"type":"or","conditions":[{"type":"headerContains","name":"subject","substring":"make money fast"},{"type":"headerContains","name":"subject","substring":"click here"},{"type":"headerContains","name":"subject","substring":"congratulations"},{"type":"headerMatches","name":"subject","pattern":"^RE:.*RE:.*RE:"},{"type":"headerContains","name":"from","substring":"noreply@suspicious"}]},"actions":[{"type":"addLabel","value":"junk"},{"type":"setPriority","value":1}],"priority":10,"enabled":true}',
         10,
         TRUE,
         strftime('%s', 'now'),

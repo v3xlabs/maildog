@@ -15,6 +15,14 @@ export type CreateRuleRequest = components['schemas']['CreateRuleRequest'];
 export type UpdateRuleRequest = components['schemas']['UpdateRuleRequest'];
 export type MessageResponse = components['schemas']['MessageResponse'];
 
+export type RulePayload = {
+    name: string;
+    condition: unknown;
+    actions: unknown[];
+    priority: number;
+    enabled: boolean;
+};
+
 export const getRules = () =>
     queryOptions({
         queryKey: ['rules'],
@@ -31,13 +39,7 @@ export const useCreateRule = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (formData: {
-            name: string;
-            condition: unknown;
-            actions: unknown[];
-            priority: number;
-            enabled: boolean;
-        }) => {
+        mutationFn: async (formData: RulePayload) => {
             const data: CreateRuleRequest = {
                 name: formData.name,
                 condition: formData.condition,
@@ -66,19 +68,7 @@ export const useUpdateRule = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({
-            id,
-            data,
-        }: {
-            id: string;
-            data: {
-                name: string;
-                condition: unknown;
-                actions: unknown[];
-                priority: number;
-                enabled: boolean;
-            };
-        }) => {
+        mutationFn: async ({ id, data }: { id: string; data: RulePayload }) => {
             const updateData: UpdateRuleRequest = {
                 name: data.name,
                 condition: data.condition,

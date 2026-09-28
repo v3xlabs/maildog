@@ -194,7 +194,8 @@ impl MailIngress {
 
                         // Batch insert all emails from this batch
                         if !batch_emails.is_empty() {
-                            let inserted_uids: Vec<i64> = batch_emails.iter().map(|e| e.imap_uid).collect();
+                            let inserted_uids: Vec<i64> = batch_emails.iter().map(|email| email.imap_uid).collect();
+                            let imap_config_id = self.imap_config_id;
                             
                             match Email::insert_batch(&self.pool, batch_emails).await {
                                 Ok(count) => {
@@ -207,7 +208,7 @@ impl MailIngress {
                                      tokio::spawn(async move {
                                          let mut categorized = 0;
                                          for uid in &inserted_uids {
-                                             if crate::rules::apply::categorize_email(&pool_clone, *uid).await.is_ok() {
+                                            if crate::rules::apply::categorize_email(&pool_clone, *uid, imap_config_id).await.is_ok() {
                                                  categorized += 1;
                                              }
                                          }
@@ -542,12 +543,13 @@ impl MailIngress {
 
          let email = Email::insert(&self.pool, new_email).await?;
  
-         let pool_clone = self.pool.clone();
-         tokio::spawn(async move {
-             if let Err(e) = crate::rules::apply::categorize_email(&pool_clone, email.imap_uid).await {
-                 warn!("Failed to auto-categorize email UID {}: {}", email.imap_uid, e);
-             }
-         });        
+        let pool_clone = self.pool.clone();
+        let imap_config_id = self.imap_config_id;
+        tokio::spawn(async move {
+            if let Err(e) = crate::rules::apply::categorize_email(&pool_clone, email.imap_uid, imap_config_id).await {
+                warn!("Failed to auto-categorize email UID {}: {}", email.imap_uid, e);
+            }
+        });
          Ok(true) // New email
     }
 }

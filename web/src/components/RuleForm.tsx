@@ -1,19 +1,13 @@
+import { DialogClose } from '@radix-ui/react-dialog';
 import { useState } from 'react';
 
-import type { RuleResponse } from '@/api/rules';
+import type { RulePayload, RuleResponse } from '@/api/rules';
 
 import { Button } from './ui/Button';
-import { DialogClose } from '@radix-ui/react-dialog';
 
 interface RuleFormProperties {
     rule?: RuleResponse;
-    onSubmit: (data: {
-        name: string;
-        condition: unknown;
-        actions: unknown[];
-        priority: number;
-        enabled: boolean;
-    }) => void;
+    onSubmit: (data: RulePayload) => void;
     onCancel?: () => void;
     onDelete?: () => void;
     isLoading?: boolean;
@@ -29,32 +23,37 @@ export const RuleForm = ({
     submitLabel = 'Save',
 }: RuleFormProperties) => {
     const defaultRule = {
-        name: "Example Rule",
+        name: 'Example Rule',
         condition: {
-            type: "headerContains",
-            name: "from",
-            substring: "@example.com"
+            type: 'headerContains',
+            name: 'from',
+            substring: '@example.com',
         },
         actions: [
             {
-                type: "setCategory",
-                value: "example"
-            }
+                type: 'addLabel',
+                value: 'example',
+            },
         ],
         priority: 10,
-        enabled: true
+        enabled: true,
     };
 
     const [ruleJson, setRuleJson] = useState(() => {
         if (rule) {
-            return JSON.stringify({
-                name: rule.name,
-                condition: rule.condition,
-                actions: rule.actions,
-                priority: rule.priority,
-                enabled: rule.enabled
-            }, null, 2);
+            return JSON.stringify(
+                {
+                    name: rule.name,
+                    condition: rule.condition,
+                    actions: rule.actions,
+                    priority: rule.priority,
+                    enabled: rule.enabled,
+                },
+                null,
+                2
+            );
         }
+
         return JSON.stringify(defaultRule, null, 2);
     });
 
@@ -63,46 +62,62 @@ export const RuleForm = ({
     const validateJson = (jsonString: string) => {
         try {
             const parsed = JSON.parse(jsonString);
-            
+
             // Basic validation
             if (!parsed.name || typeof parsed.name !== 'string') {
                 setJsonError('Rule must have a name');
+
                 return false;
             }
+
             if (!parsed.condition) {
                 setJsonError('Rule must have a condition');
+
                 return false;
             }
+
             if (!parsed.actions || !Array.isArray(parsed.actions)) {
                 setJsonError('Rule must have actions as an array');
+
                 return false;
             }
+
             if (typeof parsed.priority !== 'number') {
                 setJsonError('Priority must be a number');
+
                 return false;
             }
+
             if (typeof parsed.enabled !== 'boolean') {
                 setJsonError('Enabled must be true or false');
+
                 return false;
             }
-            
-            setJsonError(undefined);
+
+            setJsonError();
+
             return true;
         } catch (error) {
-            setJsonError(`Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            setJsonError(
+                `Invalid JSON: ${
+                    error instanceof Error ? error.message : 'Unknown error'
+                }`
+            );
+
             return false;
         }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!validateJson(ruleJson)) {
             return;
         }
 
         try {
             const parsed = JSON.parse(ruleJson);
+
             onSubmit({
                 name: parsed.name,
                 condition: parsed.condition,
@@ -118,7 +133,10 @@ export const RuleForm = ({
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label htmlFor="rule" className="block text-sm font-medium mb-1">
+                <label
+                    htmlFor="rule"
+                    className="block text-sm font-medium mb-1"
+                >
                     Rule Configuration (JSON)
                 </label>
                 <textarea
@@ -136,7 +154,8 @@ export const RuleForm = ({
                     <p className="text-red-500 text-xs mt-1">{jsonError}</p>
                 )}
                 <p className="text-gray-500 text-xs mt-1">
-                    Configure the complete rule as JSON. Include name, condition, actions, priority, and enabled fields.
+                    Configure the complete rule as JSON. Include name,
+                    condition, actions, priority, and enabled fields.
                 </p>
             </div>
 
@@ -156,7 +175,11 @@ export const RuleForm = ({
                 <div className="flex space-x-2">
                     {onCancel && (
                         <DialogClose asChild>
-                            <Button type="button" variant="outline" disabled={isLoading}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={isLoading}
+                            >
                                 Cancel
                             </Button>
                         </DialogClose>

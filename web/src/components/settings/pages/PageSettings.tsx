@@ -1,10 +1,28 @@
-import { usePages, useCreatePage, useUpdatePage, useDeletePage, useCategories } from '@/api/pages';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import { DialogContent, DialogDescription, DialogRoot, DialogTitle } from '@/components/ui/Dialog';
 import { useState } from 'react';
-import { FiPlus, FiTrash, FiEdit } from 'react-icons/fi';
+import { FiEdit, FiPlus, FiTrash } from 'react-icons/fi';
+
+import {
+    useCategories,
+    useCreatePage,
+    useDeletePage,
+    usePages,
+    useUpdatePage,
+} from '@/api/pages';
+import { Button } from '@/components/ui/Button';
+import {
+    DialogContent,
+    DialogDescription,
+    DialogRoot,
+    DialogTitle,
+} from '@/components/ui/Dialog';
+import { Input } from '@/components/ui/Input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/Select';
 
 export const PageSettings = () => {
     const userId = 'default-user';
@@ -21,7 +39,7 @@ export const PageSettings = () => {
     const slugify = (s: string) =>
         s
             .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/[^\da-z]+/g, '-')
             .replace(/(^-+)|(-+$)/g, '');
 
     const handleSave = () => {
@@ -29,17 +47,27 @@ export const PageSettings = () => {
 
         const pageSlug = slugify(editingPage.name || 'page');
 
-        const categoryToUse = editingPage.category === '__create_new__' ? (newCategoryValue || '') : (editingPage.category || '');
+        let categoryToUse = editingPage.category || '';
+
+        if (editingPage.category === '__create_new__') {
+            categoryToUse = newCategoryValue || '';
+        } else if (editingPage.category === 'none') {
+            categoryToUse = '';
+        }
 
         const pageToSave = {
             ...editingPage,
+            original_slug: editingPage.slug,
             slug: pageSlug,
             user_id: editingPage.user_id || userId,
-            category: categoryToUse === '' ? null : categoryToUse,
+            category: categoryToUse === '' ? undefined : categoryToUse,
             config: JSON.stringify(editingPage.config || {}),
         };
 
-        const exists = pagesData?.pages?.some((p: any) => p.slug === editingPage.slug);
+        const exists = pagesData?.pages?.some(
+            (p: any) => p.slug === editingPage.slug
+        );
+
         if (exists) {
             updatePage.mutate(pageToSave, { onSuccess: () => setOpen(false) });
         } else {
@@ -67,7 +95,9 @@ export const PageSettings = () => {
         <div className="card space-y-2">
             <div className="px-4 py-2 border-b">
                 <h2 className="text-lg font-medium">Page Settings</h2>
-                <p className="text-sm text-gray-500">Manage pages and categories</p>
+                <p className="text-sm text-gray-500">
+                    Manage pages and categories
+                </p>
             </div>
 
             <div className="px-4">
@@ -82,9 +112,14 @@ export const PageSettings = () => {
                     </thead>
                     <tbody>
                         {pagesData?.pages?.map((page: any) => (
-                            <tr key={page.slug} className="border-b last:border-b-0 px-2">
+                            <tr
+                                key={page.slug}
+                                className="border-b last:border-b-0 px-2"
+                            >
                                 <td className="py-2">
-                                    <div className="font-medium">{page.name}</div>
+                                    <div className="font-medium">
+                                        {page.name}
+                                    </div>
                                 </td>
                                 <td className="py-2">{page.category || '—'}</td>
                                 <td className="py-2">{page.page_type}</td>
@@ -94,7 +129,12 @@ export const PageSettings = () => {
                                             size="xs"
                                             variant="secondary"
                                             onClick={() => {
-                                                setEditingPage({ ...page, config: JSON.parse(page.config) });
+                                                setEditingPage({
+                                                    ...page,
+                                                    config: JSON.parse(
+                                                        page.config
+                                                    ),
+                                                });
                                                 setOpen(true);
                                             }}
                                         >
@@ -104,8 +144,15 @@ export const PageSettings = () => {
                                             size="xs"
                                             variant="destructive"
                                             onClick={() => {
-                                                if (confirm('Are you sure you want to delete this page?')) {
-                                                    deletePage.mutate({ slug: page.slug, userId: userId });
+                                                if (
+                                                    confirm(
+                                                        'Are you sure you want to delete this page?'
+                                                    )
+                                                ) {
+                                                    deletePage.mutate({
+                                                        slug: page.slug,
+                                                        userId: userId,
+                                                    });
                                                 }
                                             }}
                                         >
@@ -115,10 +162,15 @@ export const PageSettings = () => {
                                 </td>
                             </tr>
                         ))}
-                        {(!pagesData?.pages || pagesData.pages.length === 0) && (
+                        {(!pagesData?.pages ||
+                            pagesData.pages.length === 0) && (
                             <tr>
-                                <td colSpan={4} className="py-8 text-center text-gray-500">
-                                    No pages configured yet. Add your first page.
+                                <td
+                                    colSpan={4}
+                                    className="py-8 text-center text-gray-500"
+                                >
+                                    No pages configured yet. Add your first
+                                    page.
                                 </td>
                             </tr>
                         )}
@@ -131,12 +183,23 @@ export const PageSettings = () => {
                 </Button>
             </div>
 
-            <DialogRoot open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditingPage(null); }}>
+            <DialogRoot
+                open={open}
+                onOpenChange={(v) => {
+                    setOpen(v);
+
+                    if (!v) setEditingPage(null);
+                }}
+            >
                 {editingPage && (
                     <DialogContent className="max-w-lg">
                         <div className="px-6 py-4 border-b">
                             <DialogTitle className="text-xl font-semibold">
-                                {pagesData?.pages.some((p: any) => p.slug === editingPage.slug) ? 'Edit Page' : 'Create Page'}
+                                {pagesData?.pages.some(
+                                    (p: any) => p.slug === editingPage.slug
+                                )
+                                    ? 'Edit Page'
+                                    : 'Create Page'}
                             </DialogTitle>
                             <DialogDescription className="text-sm text-gray-600 mt-1">
                                 Configure your page settings and categorization
@@ -145,38 +208,71 @@ export const PageSettings = () => {
 
                         <div className="px-6 py-6 space-y-6">
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Name</label>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Name
+                                </label>
                                 <Input
                                     value={editingPage.name}
-                                    onChange={(e) => setEditingPage({ ...editingPage, name: e.target.value })}
+                                    onChange={(e) =>
+                                        setEditingPage({
+                                            ...editingPage,
+                                            name: e.target.value,
+                                        })
+                                    }
                                     className="w-full px-3 py-2 bg-white border-2 border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                     placeholder="Enter page name"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Category (optional)</label>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Category (optional)
+                                </label>
                                 <Select
-                                    value={editingPage.category && editingPage.category !== '' ? editingPage.category : 'none'}
-                                    onValueChange={(value: string) => setEditingPage({ ...editingPage, category: value })}
+                                    value={
+                                        editingPage.category &&
+                                        editingPage.category !== ''
+                                            ? editingPage.category
+                                            : 'none'
+                                    }
+                                    onValueChange={(value: string) =>
+                                        setEditingPage({
+                                            ...editingPage,
+                                            category: value,
+                                        })
+                                    }
                                 >
                                     <SelectTrigger className="w-full px-3 py-2 bg-white border-2 border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                                         <SelectValue placeholder="Select a category" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">No Category</SelectItem>
-                                        {(categoriesData?.categories || []).map((c: string) => (
-                                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                                        ))}
-                                        <SelectItem value="__create_new__">+ Create new category</SelectItem>
+                                        <SelectItem value="none">
+                                            No Category
+                                        </SelectItem>
+                                        {(categoriesData?.categories || []).map(
+                                            (c: string) => (
+                                                <SelectItem key={c} value={c}>
+                                                    {c}
+                                                </SelectItem>
+                                            )
+                                        )}
+                                        <SelectItem value="__create_new__">
+                                            + Create new category
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                                 {editingPage.category === '__create_new__' && (
                                     <div className="mt-3 space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700">New Category Name</label>
-                                        <Input 
-                                            value={newCategoryValue} 
-                                            onChange={(e) => setNewCategoryValue(e.target.value)}
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            New Category Name
+                                        </label>
+                                        <Input
+                                            value={newCategoryValue}
+                                            onChange={(e) =>
+                                                setNewCategoryValue(
+                                                    e.target.value
+                                                )
+                                            }
                                             className="w-full px-3 py-2 bg-white border-2 border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                             placeholder="Enter new category name"
                                         />
@@ -185,52 +281,81 @@ export const PageSettings = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Page Type</label>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Page Type
+                                </label>
                                 <Select
                                     value={editingPage.page_type}
-                                    onValueChange={(value: string) => setEditingPage({ ...editingPage, page_type: value })}
+                                    onValueChange={(value: string) =>
+                                        setEditingPage({
+                                            ...editingPage,
+                                            page_type: value,
+                                        })
+                                    }
                                 >
                                     <SelectTrigger className="w-full px-3 py-2 bg-white border-2 border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                                         <SelectValue placeholder="Select page type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="email_list">Email List</SelectItem>
-                                        <SelectItem value="calendar">Calendar</SelectItem>
-                                        <SelectItem value="overview">Overview</SelectItem>
+                                        <SelectItem value="email_list">
+                                            Email List
+                                        </SelectItem>
+                                        <SelectItem value="calendar">
+                                            Calendar
+                                        </SelectItem>
+                                        <SelectItem value="overview">
+                                            Overview
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             {editingPage.page_type === 'email_list' && (
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-gray-700">Label Filter</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Label Filter
+                                    </label>
                                     <Input
-                                        value={(editingPage.config?.labelfilter || []).join(', ')}
-                                        onChange={(e) => setEditingPage({ 
-                                            ...editingPage, 
-                                            config: { 
-                                                labelfilter: e.target.value.split(',').map((s: string) => s.trim()).filter(s => s) 
-                                            } 
-                                        })}
+                                        value={(
+                                            editingPage.config?.labelfilter ||
+                                            []
+                                        ).join(', ')}
+                                        onChange={(e) =>
+                                            setEditingPage({
+                                                ...editingPage,
+                                                config: {
+                                                    labelfilter: e.target.value
+                                                        .split(',')
+                                                        .map((s: string) =>
+                                                            s.trim()
+                                                        )
+                                                        .filter((s) => s),
+                                                },
+                                            })
+                                        }
                                         className="w-full px-3 py-2 bg-white border-2 border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                         placeholder="Enter labels separated by commas (e.g., important, work, urgent)"
                                     />
                                     <p className="text-xs text-gray-500">
-                                        Emails with these labels will appear on this page
+                                        Emails with these labels will appear on
+                                        this page
                                     </p>
                                 </div>
                             )}
                         </div>
 
                         <div className="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3">
-                            <Button 
-                                variant="ghost" 
-                                onClick={() => { setOpen(false); setEditingPage(null); }}
+                            <Button
+                                variant="ghost"
+                                onClick={() => {
+                                    setOpen(false);
+                                    setEditingPage(null);
+                                }}
                                 className="px-4 py-2 text-gray-600 hover:text-gray-800"
                             >
                                 Cancel
                             </Button>
-                            <Button 
+                            <Button
                                 onClick={handleSave}
                                 className="px-6 py-2 text-black rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                             >

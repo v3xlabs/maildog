@@ -1,4 +1,5 @@
 allowBuilds:
+  '@tailwindcss/oxide': false
   esbuild: false
   unrs-resolver: false
 patchedDependencies:
