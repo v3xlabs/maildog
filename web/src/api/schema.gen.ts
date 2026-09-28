@@ -654,6 +654,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get categories for a user */
         get: {
             parameters: {
                 query?: never;
